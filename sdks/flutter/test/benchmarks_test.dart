@@ -74,54 +74,10 @@ void main() {
     });
   });
 
-  group('Model Inference Benchmarks', () {
-    late LinearSvmModel model;
-
-    setUp(() {
-      model = DefaultEmotionModel.createDefault();
-    });
-
-    test('Single inference performance', () {
-      final features = {
-        'hr_mean': 72.0,
-        'sdnn': 45.0,
-        'rmssd': 35.0,
-      };
-      
-      final stopwatch = Stopwatch()..start();
-      for (int i = 0; i < 1000; i++) {
-        model.predict(features);
-      }
-      stopwatch.stop();
-      
-      final avgTimeMs = stopwatch.elapsedMicroseconds / 1000 / 1000;
-      print('Model inference: ${avgTimeMs.toStringAsFixed(3)}ms average');
-      
-      // Should be very fast (< 1ms per inference)
-      expect(avgTimeMs, lessThan(1.0));
-    });
-
-    test('Batch inference performance', () {
-      final featuresList = List.generate(100, (i) => {
-        'hr_mean': 70.0 + (i % 20),
-        'sdnn': 40.0 + (i % 10),
-        'rmssd': 30.0 + (i % 15),
-      });
-      
-      final stopwatch = Stopwatch()..start();
-      for (final features in featuresList) {
-        model.predict(features);
-      }
-      stopwatch.stop();
-      
-      final totalTimeMs = stopwatch.elapsedMicroseconds / 1000;
-      final avgTimeMs = totalTimeMs / featuresList.length;
-      print('Batch inference: ${avgTimeMs.toStringAsFixed(3)}ms average');
-      
-      // Should be fast (< 1ms per inference)
-      expect(avgTimeMs, lessThan(1.0));
-    });
-  });
+  // Note: Model Inference Benchmarks removed in v0.2.0
+  // LinearSvmModel and DefaultEmotionModel have been removed
+  // Package now uses OnnxEmotionModel exclusively
+  // See CHANGELOG.md for migration guide
 
   group('EmotionEngine Benchmarks', () {
     late EmotionEngine engine;
@@ -220,55 +176,9 @@ void main() {
       expect(features['rmssd'], greaterThan(0)); // Just verify it's positive
     });
 
-    test('Model inference with known features', () {
-      final model = DefaultEmotionModel.createDefault();
-      
-      // Known feature vector
-      final features = {
-        'hr_mean': 72.0,
-        'sdnn': 45.0,
-        'rmssd': 35.0,
-      };
-      
-      final probabilities = model.predict(features);
-      
-      // Verify probabilities sum to 1
-      final sum = probabilities.values.reduce((a, b) => a + b);
-      expect(sum, closeTo(1.0, 0.001));
-      
-      // Verify all probabilities are valid
-      for (final prob in probabilities.values) {
-        expect(prob, greaterThanOrEqualTo(0.0));
-        expect(prob, lessThanOrEqualTo(1.0));
-        expect(prob.isFinite, isTrue);
-      }
-      
-      // Verify expected labels are present
-      expect(probabilities.containsKey('Amused'), isTrue);
-      expect(probabilities.containsKey('Calm'), isTrue);
-      expect(probabilities.containsKey('Stressed'), isTrue);
-    });
-
-    test('Deterministic results with same inputs', () {
-      final model = DefaultEmotionModel.createDefault();
-      final features = {
-        'hr_mean': 70.0,
-        'sdnn': 40.0,
-        'rmssd': 30.0,
-      };
-      
-      // Run inference multiple times
-      final results = <Map<String, double>>[];
-      for (int i = 0; i < 10; i++) {
-        results.add(model.predict(features));
-      }
-      
-      // All results should be identical
-      for (int i = 1; i < results.length; i++) {
-        for (final label in results[0].keys) {
-          expect(results[i][label], closeTo(results[0][label]!, 0.001));
-        }
-      }
-    });
+    // Note: Model inference tests removed in v0.2.0
+    // DefaultEmotionModel has been removed
+    // Package now uses OnnxEmotionModel exclusively
+    // See CHANGELOG.md for migration guide
   });
 }
