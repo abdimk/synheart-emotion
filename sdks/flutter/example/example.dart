@@ -48,4 +48,3 @@ void main() async {
   // Clean up
   engine.clear();
 }
-

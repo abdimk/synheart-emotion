@@ -43,21 +43,20 @@ class EmotionEngine {
 
   /// Logging callback
   void Function(String level, String message, {Map<String, Object?>? context})?
-      onLog;
+  onLog;
 
-  EmotionEngine._({
-    required this.config,
-    required this.model,
-    this.onLog,
-  });
+  EmotionEngine._({required this.config, required this.model, this.onLog});
 
   /// Create engine from pretrained model
   factory EmotionEngine.fromPretrained(
     EmotionConfig config, {
     dynamic model,
-    void Function(String level, String message,
-            {Map<String, Object?>? context})?
-        onLog,
+    void Function(
+      String level,
+      String message, {
+      Map<String, Object?>? context,
+    })?
+    onLog,
   }) {
     // Use provided model or default
     final inferenceModel = model;
@@ -69,11 +68,7 @@ class EmotionEngine {
       }
     }
 
-    return EmotionEngine._(
-      config: config,
-      model: inferenceModel,
-      onLog: onLog,
-    );
+    return EmotionEngine._(config: config, model: inferenceModel, onLog: onLog);
   }
 
   /// Push new data point into the engine
@@ -87,8 +82,10 @@ class EmotionEngine {
       // Validate input using physiological constants
       if (hr < FeatureExtractor.minValidHr ||
           hr > FeatureExtractor.maxValidHr) {
-        _log('warn',
-            'Invalid HR value: $hr (valid range: ${FeatureExtractor.minValidHr}-${FeatureExtractor.maxValidHr} BPM)');
+        _log(
+          'warn',
+          'Invalid HR value: $hr (valid range: ${FeatureExtractor.minValidHr}-${FeatureExtractor.maxValidHr} BPM)',
+        );
         return;
       }
 
@@ -110,8 +107,10 @@ class EmotionEngine {
       // Remove old data points outside window
       _trimBuffer();
 
-      _log('debug',
-          'Pushed data point: HR=$hr, RR count=${rrIntervalsMs.length}');
+      _log(
+        'debug',
+        'Pushed data point: HR=$hr, RR count=${rrIntervalsMs.length}',
+      );
     } catch (e) {
       _log('error', 'Error pushing data point: $e');
     }
@@ -165,8 +164,10 @@ class EmotionEngine {
       results.add(result);
       _lastEmission = now;
 
-      _log('info',
-          'Emitted result: ${result.emotion} (${(result.confidence * 100).toStringAsFixed(1)}%)');
+      _log(
+        'info',
+        'Emitted result: ${result.emotion} (${(result.confidence * 100).toStringAsFixed(1)}%)',
+      );
     } catch (e) {
       _log('error', 'Error during inference: $e');
     }
@@ -199,8 +200,10 @@ class EmotionEngine {
 
     // Check minimum RR count
     if (allRrIntervals.length < config.minRrCount) {
-      _log('warn',
-          'Too few RR intervals: ${allRrIntervals.length} < ${config.minRrCount}');
+      _log(
+        'warn',
+        'Too few RR intervals: ${allRrIntervals.length} < ${config.minRrCount}',
+      );
       return null;
     }
 
@@ -265,7 +268,7 @@ class EmotionEngine {
       'duration_ms': duration.inMilliseconds,
       'hr_range': [
         hrValues.reduce((a, b) => a < b ? a : b),
-        hrValues.reduce((a, b) => a > b ? a : b)
+        hrValues.reduce((a, b) => a > b ? a : b),
       ],
       'rr_count': rrCount,
     };

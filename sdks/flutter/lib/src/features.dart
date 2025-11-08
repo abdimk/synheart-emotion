@@ -43,7 +43,7 @@ class FeatureExtractor {
     final mean = cleaned.reduce((a, b) => a + b) / cleaned.length;
     final variance =
         cleaned.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b) /
-            (cleaned.length - 1);
+        (cleaned.length - 1);
     return sqrt(variance);
   }
 
@@ -150,7 +150,9 @@ class FeatureExtractor {
 
   /// Validate feature vector for model compatibility
   static bool validateFeatures(
-      Map<String, double> features, List<String> requiredFeatures) {
+    Map<String, double> features,
+    List<String> requiredFeatures,
+  ) {
     for (final feature in requiredFeatures) {
       if (!features.containsKey(feature)) return false;
       if (features[feature]!.isNaN || features[feature]!.isInfinite)

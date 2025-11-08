@@ -68,7 +68,8 @@ void main() {
 
       final avgTimeMs = stopwatch.elapsedMicroseconds / 1000 / 1000;
       print(
-          'Full feature extraction: ${avgTimeMs.toStringAsFixed(3)}ms average');
+        'Full feature extraction: ${avgTimeMs.toStringAsFixed(3)}ms average',
+      );
 
       // Should be fast (< 5ms per calculation)
       expect(avgTimeMs, lessThan(5.0));
@@ -142,8 +143,9 @@ void main() {
         engine.push(
           hr: 70.0 + (i % 20),
           rrIntervalsMs: List.generate(60, (j) => 800.0 + (j % 50)),
-          timestamp:
-              DateTime.now().toUtc().subtract(Duration(milliseconds: i * 500)),
+          timestamp: DateTime.now().toUtc().subtract(
+            Duration(milliseconds: i * 500),
+          ),
         );
 
         // Run inference every 10 pushes

@@ -51,8 +51,11 @@ void main() {
       final mu = {'hr_mean': 70.0, 'sdnn': 40.0};
       final sigma = {'hr_mean': 10.0, 'sdnn': 5.0};
 
-      final normalized =
-          FeatureExtractor.normalizeFeatures(features, mu, sigma);
+      final normalized = FeatureExtractor.normalizeFeatures(
+        features,
+        mu,
+        sigma,
+      );
 
       expect(normalized['hr_mean'], equals(1.0)); // (80-70)/10
       expect(normalized['sdnn'], equals(2.0)); // (50-40)/5
@@ -225,11 +228,7 @@ void main() {
 class _MockEmotionModel {
   Map<String, double> predict(Map<String, double> features) {
     // Return mock probabilities
-    return {
-      'Calm': 0.6,
-      'Stressed': 0.3,
-      'Amused': 0.1,
-    };
+    return {'Calm': 0.6, 'Stressed': 0.3, 'Amused': 0.1};
   }
 
   Future<Map<String, double>> predictAsync(Map<String, double> features) async {
@@ -237,10 +236,7 @@ class _MockEmotionModel {
   }
 
   Map<String, dynamic> getMetadata() {
-    return {
-      'id': 'mock_model',
-      'version': '1.0',
-    };
+    return {'id': 'mock_model', 'version': '1.0'};
   }
 
   @override

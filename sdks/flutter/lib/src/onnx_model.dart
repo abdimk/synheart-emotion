@@ -24,8 +24,8 @@ class OnnxEmotionModel {
     required this.classNames,
     required OrtSession session,
     required Map<String, dynamic> metadata,
-  })  : _session = session,
-        _metadata = metadata;
+  }) : _session = session,
+       _metadata = metadata;
 
   /// Load ONNX model from assets
   static Future<OnnxEmotionModel> loadFromAsset({
@@ -106,9 +106,10 @@ class OnnxEmotionModel {
       final inputTensor = await OrtValue.fromList(inputData, inputShape);
 
       // Get input name from session or use default
-      final inputName = _session.inputNames.isNotEmpty
-          ? _session.inputNames.first
-          : 'float_input';
+      final inputName =
+          _session.inputNames.isNotEmpty
+              ? _session.inputNames.first
+              : 'float_input';
 
       // Run inference
       final inputs = {inputName: inputTensor};
@@ -150,7 +151,8 @@ class OnnxEmotionModel {
           }
         } else {
           throw EmotionError.badInput(
-              'Unexpected probabilities structure: empty or invalid');
+            'Unexpected probabilities structure: empty or invalid',
+          );
         }
       } else {
         // Fallback: use first output (shouldn't happen with ExtraTrees)
@@ -229,15 +231,15 @@ class OnnxEmotionModel {
 
   /// Get model metadata
   Map<String, dynamic> getMetadata() => {
-        'id': modelId,
-        'type': 'onnx',
-        'labels': classNames,
-        'feature_names': inputNames,
-        'num_classes': classNames.length,
-        'num_features': inputNames.length,
-        'format': _metadata['format'],
-        'created_utc': _metadata['created_utc'],
-      };
+    'id': modelId,
+    'type': 'onnx',
+    'labels': classNames,
+    'feature_names': inputNames,
+    'num_classes': classNames.length,
+    'num_features': inputNames.length,
+    'format': _metadata['format'],
+    'created_utc': _metadata['created_utc'],
+  };
 
   /// Validate model integrity
   bool validate() {

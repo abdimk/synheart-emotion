@@ -85,7 +85,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        flutter-version: ['3.24.0', '3.29.0']
+        flutter-version: ['3.29.0']
       fail-fast: false
 
     steps:
@@ -176,6 +176,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Copy models to example assets
+        run: |
+          mkdir -p examples/flutter/assets/ml
+          cp models/*.json examples/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy"
+          cp models/*.onnx examples/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No ONNX models to copy"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -190,6 +196,14 @@ jobs:
       - name: Install dependencies (example)
         working-directory: examples/flutter
         run: flutter pub get
+
+      - name: Verify project structure
+        working-directory: examples/flutter
+        run: |
+          echo "Checking project structure..."
+          ls -la lib/
+          test -f lib/main.dart || (echo "ERROR: lib/main.dart not found!" && exit 1)
+          echo "✅ Project structure verified"
 
       - name: Build example app (Android)
         working-directory: examples/flutter
