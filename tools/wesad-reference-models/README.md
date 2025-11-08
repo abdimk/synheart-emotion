@@ -10,10 +10,10 @@ This directory contains pre-trained models from the WESAD dataset for research a
 
 ## Contents
 
-- **14 pre-trained ML models** from WESAD dataset
-- Model types: XGBoost, RandomForest, ExtraTrees, KNN, LDA, SVM, etc.
-- Feature scaler and metadata
-- Reference inference code
+- **SDK-aligned pre-trained ML models** from the WESAD dataset
+- Torch and scikit-learn checkpoints (`*.pth`, `*.pkl`)
+- Feature scaler (`scaler_wrist_all.pkl`) and metadata
+- Reference inference code (`inference.py`)
 
 ## Emotion Labels (WESAD)
 
@@ -23,54 +23,61 @@ This directory contains pre-trained models from the WESAD dataset for research a
 
 ## Input Data
 
-Input is a Pandas DataFrame with HRV features extracted using NeuroKit2:
-1. ECG signal cleaned with `nk.ecg_clean()`
-2. R-peaks detected with `nk.ecg_peaks()`
-3. HRV features computed with `nk.hrv()` (2-minute sliding windows)
-4. Features scaled with StandardScaler
+Input is a Pandas DataFrame (or dict/list/NumPy array) containing the HRV summary
+features consumed by `inference.py`. Typical pipeline:
+1. Clean ECG with `nk.ecg_clean()`
+2. Detect R-peaks via `nk.ecg_peaks()`
+3. Compute HRV metrics with `nk.hrv()` (2-minute sliding windows)
+4. Assemble the following columns in the order defined in `FEATURE_NAMES` of
+   `inference.py`: `SDNN`, `RMSSD`, `pNN50`, `Mean_RR`, `HR_mean`
+5. Missing values are imputed with the median before scaling
 
-Feature order must match `feature_names.json`.
+Scaling is applied automatically using `scaler_wrist_all.pkl` when calling
+`prepare_input()` or any of the public helpers in `inference.py`.
 
 ## Usage (Research Only)
 
 ```python
 import pandas as pd
-from inference import predict_dataframe
+from inference import predict, list_available_models
 
-# Load your HRV features
-sample_features = pd.DataFrame([{
-    "feature_1": 0.1,
-    "feature_2": 0.5,
-    # ... all features from feature_names.json
-}])
+print(list_available_models())
+# ['attention_wrist_all', 'deep_mlp_wrist_all', 'extratrees_wrist_all', ...]
 
-# Predict using one of the trained models
-predictions = predict_dataframe(sample_features, model_name="ExtraTrees")
-print(predictions)  # [(label_num, label_name), ...]
+sample_features = pd.DataFrame([
+    {
+        "SDNN": 87.4,
+        "RMSSD": 62.1,
+        "pNN50": 0.31,
+        "Mean_RR": 812.5,
+        "HR_mean": 73.9,
+    }
+])
+
+predictions = predict(sample_features, model_name="attention")
+print(predictions)
+# [{'numeric': 2, 'label': 'Amusement', 'probabilities': {'Baseline': 0.02, ...}}]
 ```
 
 ## Available Models
 
-All models stored in `models/`:
+Models live in `sdk models/` (see `MODEL_DIR` inside `inference.py`). Aliases such as
+`attention`, `deepmlp`, `randomforest`, and `xgb` are supported; use
+`list_available_models()` to see the canonical names. Example inventory:
 
-| Model | File | Type |
-|-------|------|------|
-| AdaBoost | AdaBoost.joblib | Ensemble |
-| Decision Tree | DecisionTree.joblib | Tree |
-| Extra Trees | ExtraTrees.joblib | Ensemble |
-| Gradient Boosting | GradBoost.joblib | Ensemble |
-| K-Nearest Neighbors | KNN.joblib | Instance |
-| Linear Discriminant | LDA.joblib | Linear |
-| Linear SVM | LinearSVM.joblib | SVM |
-| Logistic Regression | LogReg.joblib | Linear |
-| Naive Bayes | NaiveBayes.joblib | Probabilistic |
-| Quadratic Discriminant | QDA.joblib | Quadratic |
-| Random Forest | RF.joblib | Ensemble |
-| RBF SVM | RBF-SVM.joblib | SVM |
-| Ridge Classifier | Ridge.joblib | Linear |
-| XGBoost | XGB.xgb | Gradient Boosting |
+| Alias | Checkpoint | Type |
+|-------|------------|------|
+| `attention` | `attention_wrist_all.pth` | PyTorch (AttentionClassifier) |
+| `deepmlp` | `deep_mlp_wrist_all.pth` | PyTorch (DeepMLPClassifier) |
+| `simple` | `simple_wrist_all.pth` | PyTorch (SimpleDeepNN) |
+| `randomforest` | `rf_wrist_all.pkl` | Scikit-learn |
+| `extratrees` | `extratrees_wrist_all.pkl` | Scikit-learn |
+| `logreg` | `logreg_wrist_all.pkl` | Scikit-learn |
+| `linearsvm` | `linearsvm_wrist_all.pkl` | Scikit-learn |
+| `xgb` | `xgb_wrist_all.pkl` | XGBoost (via joblib) |
 
-Each model has an associated confusion matrix image in `models/confmatrix_*.png`.
+Additional experimental checkpoints may be present (for example
+`transformer_wrist_all.pth`); availability depends on the local checkout.
 
 ## Files
 
@@ -78,14 +85,9 @@ Each model has an associated confusion matrix image in `models/confmatrix_*.png`
 wesad-reference-models/
 ├── inference.py              # Reference inference code
 ├── models/
-│   ├── *.joblib             # Scikit-learn models
-│   ├── *.xgb                # XGBoost models
-│   ├── confmatrix_*.png     # Confusion matrices
-│   ├── feature_names.json   # Required feature order
-│   ├── label_map_0based.json # Label mapping
-│   ├── scaler.joblib        # Feature scaler
-│   ├── models_all.joblib    # All models bundled
-│   └── model_results.csv    # Performance metrics
+│   ├── *.pth                # PyTorch attention/MLP checkpoints
+│   ├── *.pkl                # Scikit-learn models & scaler
+│   └── *.xgb                # XGBoost models (joblib serialized)
 └── README.md                # This file
 ```
 
@@ -121,7 +123,7 @@ pip install -e .
 ## Dependencies
 
 ```bash
-pip install numpy pandas joblib xgboost scikit-learn
+pip install numpy pandas joblib torch scikit-learn xgboost
 ```
 
 ## Training Pipeline Reference

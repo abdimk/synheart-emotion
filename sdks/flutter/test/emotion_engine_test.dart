@@ -33,13 +33,13 @@ void main() {
       final hrValues = [70.0, 72.0];
       final rrIntervals = [800.0, 820.0, 810.0];
       final motion = {'steps': 100.0};
-      
+
       final features = FeatureExtractor.extractFeatures(
         hrValues: hrValues,
         rrIntervalsMs: rrIntervals,
         motion: motion,
       );
-      
+
       expect(features.containsKey('hr_mean'), isTrue);
       expect(features.containsKey('sdnn'), isTrue);
       expect(features.containsKey('rmssd'), isTrue);
@@ -50,65 +50,18 @@ void main() {
       final features = {'hr_mean': 80.0, 'sdnn': 50.0};
       final mu = {'hr_mean': 70.0, 'sdnn': 40.0};
       final sigma = {'hr_mean': 10.0, 'sdnn': 5.0};
-      
-      final normalized = FeatureExtractor.normalizeFeatures(features, mu, sigma);
-      
+
+      final normalized =
+          FeatureExtractor.normalizeFeatures(features, mu, sigma);
+
       expect(normalized['hr_mean'], equals(1.0)); // (80-70)/10
-      expect(normalized['sdnn'], equals(2.0));   // (50-40)/5
+      expect(normalized['sdnn'], equals(2.0)); // (50-40)/5
     });
   });
 
-  group('LinearSvmModel', () {
-    late LinearSvmModel model;
-
-    setUp(() {
-      model = LinearSvmModel.fromArrays(
-        modelId: 'test_model',
-        version: '1.0',
-        labels: ['Calm', 'Stressed'],
-        featureNames: ['hr_mean', 'sdnn'],
-        weights: [
-          [0.1, 0.2],  // Calm
-          [-0.1, -0.2], // Stressed
-        ],
-        biases: [0.0, 0.0],
-        mu: {'hr_mean': 70.0, 'sdnn': 40.0},
-        sigma: {'hr_mean': 10.0, 'sdnn': 5.0},
-      );
-    });
-
-    test('predict returns valid probabilities', () {
-      final features = {'hr_mean': 70.0, 'sdnn': 40.0};
-      final probabilities = model.predict(features);
-      
-      expect(probabilities.length, equals(2));
-      expect(probabilities.containsKey('Calm'), isTrue);
-      expect(probabilities.containsKey('Stressed'), isTrue);
-      
-      // Probabilities should sum to 1
-      final sum = probabilities.values.reduce((a, b) => a + b);
-      expect(sum, closeTo(1.0, 0.001));
-      
-      // All probabilities should be positive
-      for (final prob in probabilities.values) {
-        expect(prob, greaterThanOrEqualTo(0.0));
-        expect(prob, lessThanOrEqualTo(1.0));
-      }
-    });
-
-    test('predict throws error for invalid features', () {
-      final invalidFeatures = {'hr_mean': double.nan};
-      
-      expect(
-        () => model.predict(invalidFeatures),
-        throwsA(isA<EmotionError>()),
-      );
-    });
-
-    test('validate checks model integrity', () {
-      expect(model.validate(), isTrue);
-    });
-  });
+  // Note: LinearSvmModel tests removed in v0.2.0
+  // Package now uses OnnxEmotionModel exclusively
+  // See CHANGELOG.md for migration guide
 
   group('EmotionEngine', () {
     late EmotionEngine engine;
@@ -126,13 +79,13 @@ void main() {
     test('push adds data to buffer', () {
       final statsBefore = engine.getBufferStats();
       expect(statsBefore['count'], equals(0));
-      
+
       engine.push(
         hr: 70.0,
         rrIntervalsMs: [800.0, 820.0, 810.0],
         timestamp: DateTime.now().toUtc(),
       );
-      
+
       final statsAfter = engine.getBufferStats();
       expect(statsAfter['count'], equals(1));
     });
@@ -143,7 +96,7 @@ void main() {
         rrIntervalsMs: [800.0], // Only 1 RR interval, need 5
         timestamp: DateTime.now().toUtc(),
       );
-      
+
       final results = await engine.consumeReady();
       expect(results, isEmpty);
     });
@@ -157,10 +110,10 @@ void main() {
           timestamp: DateTime.now().toUtc().subtract(Duration(seconds: i)),
         );
       }
-      
+
       final results = await engine.consumeReady();
       expect(results, isNotEmpty);
-      
+
       final result = results.first;
       expect(result.emotion, isIn(['Amused', 'Calm', 'Stressed']));
       expect(result.confidence, greaterThan(0.0));
@@ -173,11 +126,11 @@ void main() {
         rrIntervalsMs: [800.0, 820.0, 810.0],
         timestamp: DateTime.now().toUtc(),
       );
-      
+
       expect(engine.getBufferStats()['count'], greaterThan(0));
-      
+
       engine.clear();
-      
+
       expect(engine.getBufferStats()['count'], equals(0));
     });
   });
@@ -187,14 +140,14 @@ void main() {
       final probabilities = {'Calm': 0.6, 'Stressed': 0.3, 'Amused': 0.1};
       final features = {'hr_mean': 70.0, 'sdnn': 40.0};
       final model = {'id': 'test', 'version': '1.0'};
-      
+
       final result = EmotionResult.fromInference(
         timestamp: DateTime.now(),
         probabilities: probabilities,
         features: features,
         model: model,
       );
-      
+
       expect(result.emotion, equals('Calm'));
       expect(result.confidence, equals(0.6));
       expect(result.probabilities, equals(probabilities));
@@ -207,10 +160,10 @@ void main() {
         features: {'hr_mean': 70.0},
         model: {'id': 'test'},
       );
-      
+
       final json = original.toJson();
       final restored = EmotionResult.fromJson(json);
-      
+
       expect(restored.timestamp, equals(original.timestamp));
       expect(restored.emotion, equals(original.emotion));
       expect(restored.confidence, equals(original.confidence));
@@ -220,7 +173,7 @@ void main() {
   group('EmotionConfig', () {
     test('default values are correct', () {
       const config = EmotionConfig();
-      
+
       expect(config.modelId, equals('svm_linear_wrist_sdnn_v1_0'));
       expect(config.window, equals(Duration(seconds: 60)));
       expect(config.step, equals(Duration(seconds: 5)));
@@ -234,7 +187,7 @@ void main() {
         window: Duration(seconds: 30),
         minRrCount: 20,
       );
-      
+
       expect(modified.window, equals(Duration(seconds: 30)));
       expect(modified.minRrCount, equals(20));
       expect(modified.step, equals(original.step)); // Unchanged
