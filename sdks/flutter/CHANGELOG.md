@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-11-08
+
+### Fixed
+- Fixed `EmotionError` to properly implement `Exception` interface, resolving `only_throw_errors` lint warnings
+- Fixed directive ordering in library exports for better code organization
+- Fixed Android example app `minSdkVersion` to 24 to match ONNX Runtime requirements
+- Fixed CI/CD workflows to handle info-level linting issues gracefully
+- Improved error handling in CI workflow's `all-checks-passed` job
+
+### Changed
+- Updated CI workflows to use `--no-fatal-infos` flag for static analysis, allowing info-level suggestions without failing builds
+- Enhanced CI error reporting with better diagnostics for failed jobs
+
 ## [0.2.0] - 2024-11-07
 
 ### Breaking Changes
