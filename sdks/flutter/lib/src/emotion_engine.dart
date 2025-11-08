@@ -27,7 +27,12 @@ class EmotionEngine {
   /// Expected number of core HRV features (SDNN, RMSSD, pNN50, Mean_RR, HR_mean).
   static const int expectedFeatureCount = 5;
 
+  /// Configuration for this emotion engine instance.
   final EmotionConfig config;
+
+  /// The inference model used for emotion prediction.
+  ///
+  /// Can be an [OnnxEmotionModel] or null if no model is loaded.
   final dynamic model; // Can be LinearSvmModel or OnnxEmotionModel
 
   /// Ring buffer for sliding window

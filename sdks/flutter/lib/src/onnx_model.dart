@@ -137,7 +137,7 @@ class OnnxEmotionModel {
         final probsData = await probsValue.asList();
 
         // Handle the shape (1, 3) - first dimension is batch, second is classes
-        if (probsData is List && probsData.isNotEmpty) {
+        if (probsData.isNotEmpty) {
           if (probsData[0] is List) {
             // Nested list [[p1, p2, p3]] - extract inner list
             final innerList = probsData[0] as List;
@@ -158,7 +158,7 @@ class OnnxEmotionModel {
         final outputValue = outputs[outputKey]!;
         final outputData = await outputValue.asList();
 
-        if (outputData is List && outputData.isNotEmpty) {
+        if (outputData.isNotEmpty) {
           if (outputData[0] is List) {
             final innerList = outputData[0] as List;
             probabilities =

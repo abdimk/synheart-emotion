@@ -6,6 +6,7 @@ abstract class EmotionError {
   /// Additional context
   final Map<String, dynamic>? context;
 
+  /// Creates a new [EmotionError] with the given message and optional context.
   const EmotionError(this.message, [this.context]);
 
   /// Too few RR intervals for stable inference

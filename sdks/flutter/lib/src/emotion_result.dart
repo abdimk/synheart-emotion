@@ -18,6 +18,9 @@ class EmotionResult {
   /// Model metadata
   final Map<String, dynamic> model;
 
+  /// Creates a new [EmotionResult] with the specified values.
+  ///
+  /// Typically created via [fromInference] or [fromJson] factory constructors.
   const EmotionResult({
     required this.timestamp,
     required this.emotion,

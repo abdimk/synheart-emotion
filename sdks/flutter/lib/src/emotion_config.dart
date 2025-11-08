@@ -21,6 +21,9 @@ class EmotionConfig {
   /// Optional label priors for calibration
   final Map<String, double>? priors;
 
+  /// Creates a new [EmotionConfig] with the specified parameters.
+  ///
+  /// All parameters are optional and have sensible defaults for typical use cases.
   const EmotionConfig({
     this.modelId = 'svm_linear_wrist_sdnn_v1_0',
     this.window = const Duration(seconds: 60),
