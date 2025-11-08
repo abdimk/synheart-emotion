@@ -52,16 +52,10 @@
 library synheart_emotion;
 
 // Core engine and models
-export 'src/emotion_engine.dart';
 export 'src/emotion_config.dart';
-export 'src/emotion_result.dart';
+export 'src/emotion_engine.dart';
 export 'src/emotion_error.dart';
-
-// Feature extraction
-export 'src/features.dart';
-
-// Model inference
-export 'src/onnx_model.dart';
-
-// Stream helpers
+export 'src/emotion_result.dart';
 export 'src/emotion_stream.dart';
+export 'src/features.dart';
+export 'src/onnx_model.dart';

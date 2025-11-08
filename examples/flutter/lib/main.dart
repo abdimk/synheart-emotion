@@ -117,8 +117,8 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
     );
   }
 
-  void _runInference() {
-    final results = _engine.consumeReady();
+  void _runInference() async {
+    final results = await _engine.consumeReady();
     
     for (final result in results) {
       setState(() {

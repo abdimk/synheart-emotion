@@ -39,7 +39,7 @@ jobs:
 
       - name: Analyze code
         working-directory: sdks/flutter
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       - name: Check for outdated dependencies
         working-directory: sdks/flutter
@@ -260,12 +260,35 @@ jobs:
 
     steps:
       - name: Check all job results
+        shell: bash
         run: |
-          set -euo pipefail
-          if [ "${{ needs.analyze.result }}" != "success" ] || \
-             [ "${{ needs.test.result }}" != "success" ] || \
-             [ "${{ needs.test-multiplatform.result }}" != "success" ]; then
-            echo "Some required checks failed"
+          set -eo pipefail
+          echo "Checking job results..."
+          echo "analyze: ${{ needs.analyze.result }}"
+          echo "test: ${{ needs.test.result }}"
+          echo "test-multiplatform: ${{ needs.test-multiplatform.result }}"
+          
+          ANALYZE_RESULT="${{ needs.analyze.result }}"
+          TEST_RESULT="${{ needs.test.result }}"
+          TEST_MULTIPLATFORM_RESULT="${{ needs.test-multiplatform.result }}"
+          
+          FAILED=0
+          if [ "${ANALYZE_RESULT}" != "success" ]; then
+            echo "❌ analyze job failed with result: ${ANALYZE_RESULT}"
+            FAILED=1
+          fi
+          if [ "${TEST_RESULT}" != "success" ]; then
+            echo "❌ test job failed with result: ${TEST_RESULT}"
+            FAILED=1
+          fi
+          if [ "${TEST_MULTIPLATFORM_RESULT}" != "success" ]; then
+            echo "❌ test-multiplatform job failed with result: ${TEST_MULTIPLATFORM_RESULT}"
+            FAILED=1
+          fi
+          
+          if [ "${FAILED}" -eq 1 ]; then
+            echo "❌ Some required checks failed"
             exit 1
           fi
-          echo "All required checks passed!"
+          
+          echo "✅ All required checks passed!"

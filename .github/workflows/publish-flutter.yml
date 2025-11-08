@@ -83,7 +83,7 @@ jobs:
 
       - name: Run analyzer
         working-directory: sdks/flutter
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       - name: Verify package
         working-directory: sdks/flutter

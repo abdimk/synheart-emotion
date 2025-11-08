@@ -1,7 +1,8 @@
 import 'dart:collection';
+
 import 'emotion_config.dart';
-import 'emotion_result.dart';
 import 'emotion_error.dart';
+import 'emotion_result.dart';
 import 'features.dart';
 
 /// Data point for ring buffer

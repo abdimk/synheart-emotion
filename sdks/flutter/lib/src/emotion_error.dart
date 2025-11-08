@@ -1,5 +1,5 @@
 /// Errors that can occur during emotion inference
-abstract class EmotionError {
+abstract class EmotionError implements Exception {
   /// Error message
   final String message;
 
