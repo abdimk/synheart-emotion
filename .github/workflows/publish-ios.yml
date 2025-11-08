@@ -28,6 +28,10 @@ jobs:
   validate:
     name: Validate Package
     runs-on: macos-latest
+    if: |
+      github.event_name == 'release' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/ios-v')))
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

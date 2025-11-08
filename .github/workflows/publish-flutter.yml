@@ -50,23 +50,15 @@ jobs:
         working-directory: sdks/flutter
         run: flutter pub get
 
-      - name: Check version and publisher
+      - name: Check version
         working-directory: sdks/flutter
         id: package-info
         run: |
           set -euo pipefail
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | xargs)
-          PUBLISHER=$(grep '^publisher:' pubspec.yaml | sed 's/publisher: //' | xargs || echo "none")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "publisher=$PUBLISHER" >> $GITHUB_OUTPUT
           echo "Package version: $VERSION"
-          echo "Publisher: $PUBLISHER"
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "PACKAGE_PUBLISHER=$PUBLISHER" >> $GITHUB_ENV
-          
-          if [ "$PUBLISHER" = "none" ]; then
-            echo "⚠️ Warning: No publisher specified in pubspec.yaml"
-          fi
 
       - name: Run tests
         working-directory: sdks/flutter
@@ -94,7 +86,7 @@ jobs:
     name: Publish Package
     needs: validate
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/flutter-v'))) ||
       github.event_name == 'release' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false')
     permissions:
