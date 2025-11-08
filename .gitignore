@@ -145,6 +145,7 @@ eggs/
 .eggs/
 lib/
 !sdks/flutter/lib/
+!examples/flutter/lib/
 lib64/
 parts/
 sdist/
