@@ -38,6 +38,7 @@ jobs:
         working-directory: sdks/ios
         id: version
         run: |
+          set -euo pipefail
           # Extract version from Git tag or release
           if [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
@@ -109,11 +110,13 @@ jobs:
       - name: Get version
         id: version
         run: |
+          set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Verify Git tag exists (for SPM)
         run: |
+          set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
           # Try both with and without 'v' prefix
           for TAG in "v$VERSION" "$VERSION" "ios-v$VERSION"; do
@@ -173,12 +176,14 @@ jobs:
       - name: Get version
         id: version
         run: |
+          set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Update podspec version
         working-directory: sdks/ios
         run: |
+          set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
           # Update version in podspec if needed
           sed -i '' "s/spec.version.*=.*\".*\"/spec.version      = \"$VERSION\"/" SynheartEmotion.podspec || \
@@ -217,6 +222,7 @@ jobs:
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         run: |
+          set -euo pipefail
           if [ -z "$COCOAPODS_TRUNK_TOKEN" ]; then
             echo "❌ Error: COCOAPODS_TRUNK_TOKEN secret is not set"
             echo "Please add COCOAPODS_TRUNK_TOKEN to GitHub Secrets"

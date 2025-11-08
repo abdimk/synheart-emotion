@@ -1,6 +1,10 @@
 name: Publish Python Package to PyPI
 
 on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'  # Matches v1.0.0, v1.2.3, v0.5.0-beta, etc.
+      - 'python-v[0-9]+.[0-9]+.[0-9]+*'  # Matches python-v1.0.0, python-v1.2.3, etc.
   release:
     types: [published]
   workflow_dispatch:
@@ -109,7 +113,10 @@ jobs:
           twine upload --repository-url https://test.pypi.org/legacy/ dist/* --non-interactive || echo "Dry-run complete (TestPyPI may require authentication)"
 
       - name: Publish to PyPI
-        if: (github.event_name == 'release') || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false')
+        if: |
+          (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false')
         uses: pypa/gh-action-pypi-publish@release/v1
         # This action automatically uses OIDC trusted publishing if configured
         # For API token alternative, uncomment and add password:

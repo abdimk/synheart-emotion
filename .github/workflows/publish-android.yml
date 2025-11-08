@@ -50,6 +50,7 @@ jobs:
         working-directory: sdks/android
         id: version
         run: |
+          set -euo pipefail
           # Extract version from build.gradle
           VERSION=$(grep -A 5 'defaultConfig' build.gradle | grep 'versionName' | sed "s/.*versionName \"\(.*\)\".*/\1/" | tr -d ' ')
           GROUP_ID=$(grep 'groupId =' build.gradle | sed "s/.*groupId = '\(.*\)'.*/\1/" | tr -d ' ')
@@ -72,25 +73,33 @@ jobs:
 
       - name: Setup GPG for signing
         run: |
-          # Check if GPG key file exists in repository
-          if [ -f "gpg-private-key.asc" ]; then
-            echo "✅ Found GPG key file in repository"
-            # Try to import for key ID verification
-            gpg --batch --import gpg-private-key.asc 2>/dev/null || echo "Could not import for verification"
-          elif [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "✅ Found GPG key in secrets"
-            # Try to import for key ID verification
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>/dev/null || echo "Could not import for verification"
+          set -euo pipefail
+          # Prioritize secrets over repository file for security
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "✅ Found GPG key in secrets (preferred method)"
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>/dev/null || {
+              echo "❌ Error: Failed to import GPG key from secrets"
+              exit 1
+            }
+          elif [ -f "gpg-private-key.asc" ]; then
+            echo "⚠️ Warning: Using GPG key from repository file (less secure)"
+            echo "⚠️ Consider moving GPG_PRIVATE_KEY to GitHub Secrets for better security"
+            gpg --batch --import gpg-private-key.asc 2>/dev/null || {
+              echo "❌ Error: Failed to import GPG key from file"
+              exit 1
+            }
           else
             echo "⚠️ Warning: No GPG key found. Artifacts will not be signed."
+            echo "⚠️ Add GPG_PRIVATE_KEY to GitHub Secrets or ensure gpg-private-key.asc exists"
           fi
           
-          # Try to get key ID for verification (optional)
+          # Verify key ID
           GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG 2>/dev/null | grep -E '^sec' | awk '{print $2}' | cut -d'/' -f2 | head -1 || echo "")
           if [ -n "$GPG_KEY_ID" ]; then
             echo "✅ GPG key ID: $GPG_KEY_ID"
+            echo "GPG_KEY_ID=$GPG_KEY_ID" >> $GITHUB_ENV
           else
-            echo "⚠️ Could not determine GPG key ID (this is OK if key will be provided via secret)"
+            echo "⚠️ Could not determine GPG key ID"
           fi
 
       - name: Cache Gradle dependencies
@@ -122,15 +131,20 @@ jobs:
       - name: Prepare GPG key for Gradle
         id: gpg-key
         run: |
-          # Get GPG key from file or secret and prepare for Gradle
-          if [ -f "gpg-private-key.asc" ]; then
-            GPG_KEY_CONTENT=$(cat gpg-private-key.asc)
-            echo "key_found=true" >> $GITHUB_OUTPUT
-          elif [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+          set -euo pipefail
+          # Prioritize secrets over repository file for security
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
             GPG_KEY_CONTENT="${{ secrets.GPG_PRIVATE_KEY }}"
             echo "key_found=true" >> $GITHUB_OUTPUT
+            echo "key_source=secrets" >> $GITHUB_OUTPUT
+          elif [ -f "gpg-private-key.asc" ]; then
+            echo "⚠️ Using GPG key from repository file (less secure)" >&2
+            GPG_KEY_CONTENT=$(cat gpg-private-key.asc)
+            echo "key_found=true" >> $GITHUB_OUTPUT
+            echo "key_source=file" >> $GITHUB_OUTPUT
           else
             echo "key_found=false" >> $GITHUB_OUTPUT
+            echo "key_source=none" >> $GITHUB_OUTPUT
             GPG_KEY_CONTENT=""
           fi
           
@@ -168,6 +182,7 @@ jobs:
           GPG_PRIVATE_KEY: ${{ env.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          set -euo pipefail
           if [ -z "$OSSRH_USERNAME" ] || [ -z "$OSSRH_PASSWORD" ]; then
             echo "❌ Error: OSSRH credentials not set"
             echo "Please add OSSRH_USERNAME and OSSRH_PASSWORD to GitHub Secrets"
