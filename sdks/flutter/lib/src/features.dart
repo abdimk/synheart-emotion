@@ -154,9 +154,12 @@ class FeatureExtractor {
     List<String> requiredFeatures,
   ) {
     for (final feature in requiredFeatures) {
-      if (!features.containsKey(feature)) return false;
-      if (features[feature]!.isNaN || features[feature]!.isInfinite)
+      if (!features.containsKey(feature)) {
         return false;
+      }
+      if (features[feature]!.isNaN || features[feature]!.isInfinite) {
+        return false;
+      }
     }
     return true;
   }

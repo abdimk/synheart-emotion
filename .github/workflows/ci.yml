@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy models to Flutter assets
+        shell: bash
         run: |
           mkdir -p sdks/flutter/assets/ml
           cp models/*.json sdks/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy"
@@ -53,6 +54,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy models to Flutter assets
+        shell: bash
         run: |
           mkdir -p sdks/flutter/assets/ml
           cp models/*.json sdks/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy"
@@ -93,6 +95,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy models to Flutter assets
+        shell: bash
         run: |
           mkdir -p sdks/flutter/assets/ml
           cp models/*.json sdks/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy"
@@ -177,6 +180,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy models to example assets
+        shell: bash
         run: |
           mkdir -p examples/flutter/assets/ml
           cp models/*.json examples/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy"
@@ -201,9 +205,16 @@ jobs:
         working-directory: examples/flutter
         run: |
           echo "Checking project structure..."
-          ls -la lib/
-          test -f lib/main.dart || (echo "ERROR: lib/main.dart not found!" && exit 1)
-          echo "✅ Project structure verified"
+          pwd
+          ls -la
+          if [ -d "lib" ]; then
+            ls -la lib/
+            test -f lib/main.dart || (echo "ERROR: lib/main.dart not found!" && exit 1)
+            echo "✅ Project structure verified"
+          else
+            echo "ERROR: lib/ directory not found!"
+            exit 1
+          fi
 
       - name: Build example app (Android)
         working-directory: examples/flutter

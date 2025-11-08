@@ -33,6 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy models to Flutter assets
+        shell: bash
         run: |
           mkdir -p sdks/flutter/assets/ml
           cp models/*.json sdks/flutter/assets/ml/ 2>/dev/null || echo "⚠️ No models to copy (this is OK if using embedded models)"

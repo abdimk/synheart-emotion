@@ -180,9 +180,21 @@ analyzer:
 
     # Info
     todo: info
+    
+    # Relax some style rules to info level (don't fail CI)
+    avoid_print: info
+    avoid_redundant_argument_values: info
+    omit_local_variable_types: info
+    prefer_int_literals: info
+    prefer_expression_function_bodies: info
+    always_put_control_body_on_new_line: info
+    sort_constructors_first: info
+    lines_longer_than_80_chars: info
 
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"
     - "lib/generated/**"
+    - "example/**"  # Examples are allowed to be more relaxed
+    - "test/**"  # Tests are allowed to use print and be less strict

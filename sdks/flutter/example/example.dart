@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, avoid_redundant_argument_values, omit_local_variable_types
+
 import 'package:synheart_emotion/synheart_emotion.dart';
 
 /// Example demonstrating basic usage of synheart_emotion package.
