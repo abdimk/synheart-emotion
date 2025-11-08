@@ -102,16 +102,27 @@ void main() {
     });
 
     test('consumeReady returns results when enough data', () async {
+      // Create a mock model for testing
+      final mockModel = _MockEmotionModel();
+      final engineWithModel = EmotionEngine.fromPretrained(
+        const EmotionConfig(
+          window: Duration(seconds: 10),
+          step: Duration(seconds: 1),
+          minRrCount: 5,
+        ),
+        model: mockModel,
+      );
+
       // Add enough data points
       for (int i = 0; i < 3; i++) {
-        engine.push(
+        engineWithModel.push(
           hr: 70.0 + i,
           rrIntervalsMs: [800.0, 820.0, 810.0, 830.0, 815.0],
           timestamp: DateTime.now().toUtc().subtract(Duration(seconds: i)),
         );
       }
 
-      final results = await engine.consumeReady();
+      final results = await engineWithModel.consumeReady();
       expect(results, isNotEmpty);
 
       final result = results.first;
@@ -208,4 +219,30 @@ void main() {
       expect(error.message, contains('Invalid HR value'));
     });
   });
+}
+
+/// Mock model for testing EmotionEngine without requiring actual ONNX model
+class _MockEmotionModel {
+  Map<String, double> predict(Map<String, double> features) {
+    // Return mock probabilities
+    return {
+      'Calm': 0.6,
+      'Stressed': 0.3,
+      'Amused': 0.1,
+    };
+  }
+
+  Future<Map<String, double>> predictAsync(Map<String, double> features) async {
+    return predict(features);
+  }
+
+  Map<String, dynamic> getMetadata() {
+    return {
+      'id': 'mock_model',
+      'version': '1.0',
+    };
+  }
+
+  @override
+  String toString() => 'MockEmotionModel';
 }

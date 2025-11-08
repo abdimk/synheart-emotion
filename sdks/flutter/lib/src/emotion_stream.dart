@@ -20,7 +20,8 @@ class Tick {
 /// Stream helper for emotion inference
 class EmotionStream {
   final EmotionEngine _engine;
-  final StreamController<EmotionResult> _controller = StreamController<EmotionResult>.broadcast();
+  final StreamController<EmotionResult> _controller =
+      StreamController<EmotionResult>.broadcast();
   StreamSubscription<Tick>? _subscription;
 
   EmotionStream(this._engine);

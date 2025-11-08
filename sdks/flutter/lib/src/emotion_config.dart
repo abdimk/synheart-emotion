@@ -2,22 +2,22 @@
 class EmotionConfig {
   /// Model identifier (default: svm_linear_wrist_sdnn_v1_0)
   final String modelId;
-  
+
   /// Rolling window size for feature calculation (default: 60s)
   final Duration window;
-  
+
   /// Emission cadence for results (default: 5s)
   final Duration step;
-  
+
   /// Minimum RR intervals required for inference (default: 30)
   final int minRrCount;
-  
+
   /// Whether to return all label probabilities (default: true)
   final bool returnAllProbas;
-  
+
   /// Optional HR baseline for personalization
   final double? hrBaseline;
-  
+
   /// Optional label priors for calibration
   final Map<String, double>? priors;
 
@@ -55,7 +55,7 @@ class EmotionConfig {
   @override
   String toString() {
     return 'EmotionConfig(modelId: $modelId, window: ${window.inSeconds}s, '
-           'step: ${step.inSeconds}s, minRrCount: $minRrCount)';
+        'step: ${step.inSeconds}s, minRrCount: $minRrCount)';
   }
 
   @override

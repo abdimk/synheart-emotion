@@ -2,19 +2,19 @@
 class EmotionResult {
   /// Timestamp when inference was performed
   final DateTime timestamp;
-  
+
   /// Predicted emotion label (top-1)
   final String emotion;
-  
+
   /// Confidence score (top-1 probability)
   final double confidence;
-  
+
   /// All label probabilities
   final Map<String, double> probabilities;
-  
+
   /// Extracted features used for inference
   final Map<String, double> features;
-  
+
   /// Model metadata
   final Map<String, dynamic> model;
 
@@ -37,7 +37,7 @@ class EmotionResult {
     // Find top-1 emotion
     String topEmotion = '';
     double topConfidence = 0.0;
-    
+
     for (final entry in probabilities.entries) {
       if (entry.value > topConfidence) {
         topConfidence = entry.value;
@@ -82,7 +82,7 @@ class EmotionResult {
   @override
   String toString() {
     return 'EmotionResult($emotion: ${(confidence * 100).toStringAsFixed(1)}%, '
-           'features: ${features.keys.join(', ')})';
+        'features: ${features.keys.join(', ')})';
   }
 
   @override

@@ -188,18 +188,18 @@ jobs:
         run: flutter pub get
 
       - name: Install dependencies (example)
-        working-directory: examples
+        working-directory: examples/flutter
         run: flutter pub get
 
       - name: Build example app (Android)
-        working-directory: examples
+        working-directory: examples/flutter
         run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: example-app-debug
-          path: examples/build/app/outputs/flutter-apk/app-debug.apk
+          path: examples/flutter/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
 
   security:
@@ -224,7 +224,7 @@ jobs:
       - name: Check for known security vulnerabilities
         working-directory: sdks/flutter
         run: |
-          flutter pub outdated --mode=null-safety
+          flutter pub outdated
           echo "Manual security review recommended"
 
   all-checks-passed:

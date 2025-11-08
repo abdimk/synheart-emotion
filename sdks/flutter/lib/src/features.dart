@@ -34,32 +34,34 @@ class FeatureExtractor {
   /// Extract SDNN (standard deviation of NN intervals) from RR intervals
   static double extractSdnn(List<double> rrIntervalsMs) {
     if (rrIntervalsMs.length < 2) return 0.0;
-    
+
     // Clean RR intervals (remove outliers)
     final cleaned = _cleanRrIntervals(rrIntervalsMs);
     if (cleaned.length < 2) return 0.0;
-    
+
     // Calculate standard deviation (sample std, N-1 denominator)
     final mean = cleaned.reduce((a, b) => a + b) / cleaned.length;
-    final variance = cleaned.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b) / (cleaned.length - 1);
+    final variance =
+        cleaned.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b) /
+            (cleaned.length - 1);
     return sqrt(variance);
   }
 
   /// Extract RMSSD (root mean square of successive differences) from RR intervals
   static double extractRmssd(List<double> rrIntervalsMs) {
     if (rrIntervalsMs.length < 2) return 0.0;
-    
+
     // Clean RR intervals
     final cleaned = _cleanRrIntervals(rrIntervalsMs);
     if (cleaned.length < 2) return 0.0;
-    
+
     // Calculate successive differences
     double sumSquaredDiffs = 0.0;
     for (int i = 1; i < cleaned.length; i++) {
       final diff = cleaned[i] - cleaned[i - 1];
       sumSquaredDiffs += diff * diff;
     }
-    
+
     // Root mean square
     return sqrt(sumSquaredDiffs / (cleaned.length - 1));
   }
@@ -67,11 +69,11 @@ class FeatureExtractor {
   /// Extract pNN50 (percentage of successive RR intervals differing by more than 50ms)
   static double extractPnn50(List<double> rrIntervalsMs) {
     if (rrIntervalsMs.length < 2) return 0.0;
-    
+
     // Clean RR intervals
     final cleaned = _cleanRrIntervals(rrIntervalsMs);
     if (cleaned.length < 2) return 0.0;
-    
+
     // Count successive differences > 50ms
     int count = 0;
     for (int i = 1; i < cleaned.length; i++) {
@@ -79,7 +81,7 @@ class FeatureExtractor {
         count++;
       }
     }
-    
+
     // Return percentage
     return (count / (cleaned.length - 1)) * 100.0;
   }
@@ -87,11 +89,11 @@ class FeatureExtractor {
   /// Extract Mean RR interval from RR intervals
   static double extractMeanRr(List<double> rrIntervalsMs) {
     if (rrIntervalsMs.isEmpty) return 0.0;
-    
+
     // Clean RR intervals
     final cleaned = _cleanRrIntervals(rrIntervalsMs);
     if (cleaned.isEmpty) return 0.0;
-    
+
     return cleaned.reduce((a, b) => a + b) / cleaned.length;
   }
 
@@ -147,10 +149,12 @@ class FeatureExtractor {
   }
 
   /// Validate feature vector for model compatibility
-  static bool validateFeatures(Map<String, double> features, List<String> requiredFeatures) {
+  static bool validateFeatures(
+      Map<String, double> features, List<String> requiredFeatures) {
     for (final feature in requiredFeatures) {
       if (!features.containsKey(feature)) return false;
-      if (features[feature]!.isNaN || features[feature]!.isInfinite) return false;
+      if (features[feature]!.isNaN || features[feature]!.isInfinite)
+        return false;
     }
     return true;
   }
@@ -162,15 +166,15 @@ class FeatureExtractor {
     Map<String, double> sigma,
   ) {
     final normalized = <String, double>{};
-    
+
     for (final entry in features.entries) {
       final featureName = entry.key;
       final value = entry.value;
-      
+
       if (mu.containsKey(featureName) && sigma.containsKey(featureName)) {
         final mean = mu[featureName]!;
         final std = sigma[featureName]!;
-        
+
         // Avoid division by zero
         if (std > 0) {
           normalized[featureName] = (value - mean) / std;
@@ -182,7 +186,7 @@ class FeatureExtractor {
         normalized[featureName] = value;
       }
     }
-    
+
     return normalized;
   }
 }

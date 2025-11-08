@@ -50,7 +50,8 @@ class EmotionEngine {
   factory EmotionEngine.fromPretrained(
     EmotionConfig config, {
     dynamic model,
-    void Function(String level, String message, {Map<String, Object?>? context})?
+    void Function(String level, String message,
+            {Map<String, Object?>? context})?
         onLog,
   }) {
     // Use provided model or default
@@ -79,8 +80,10 @@ class EmotionEngine {
   }) {
     try {
       // Validate input using physiological constants
-      if (hr < FeatureExtractor.minValidHr || hr > FeatureExtractor.maxValidHr) {
-        _log('warn', 'Invalid HR value: $hr (valid range: ${FeatureExtractor.minValidHr}-${FeatureExtractor.maxValidHr} BPM)');
+      if (hr < FeatureExtractor.minValidHr ||
+          hr > FeatureExtractor.maxValidHr) {
+        _log('warn',
+            'Invalid HR value: $hr (valid range: ${FeatureExtractor.minValidHr}-${FeatureExtractor.maxValidHr} BPM)');
         return;
       }
 
@@ -96,14 +99,14 @@ class EmotionEngine {
         rrIntervalsMs: List.from(rrIntervalsMs),
         motion: motion,
       );
-      
+
       _buffer.add(dataPoint);
-      
+
       // Remove old data points outside window
       _trimBuffer();
-      
-      _log('debug', 'Pushed data point: HR=$hr, RR count=${rrIntervalsMs.length}');
-      
+
+      _log('debug',
+          'Pushed data point: HR=$hr, RR count=${rrIntervalsMs.length}');
     } catch (e) {
       _log('error', 'Error pushing data point: $e');
     }
@@ -112,15 +115,15 @@ class EmotionEngine {
   /// Consume ready results (throttled by step interval)
   Future<List<EmotionResult>> consumeReady() async {
     final results = <EmotionResult>[];
-    
+
     if (model == null) {
       return results;
     }
-    
+
     try {
       // Check if enough time has passed since last emission
       final now = DateTime.now().toUtc();
-      if (_lastEmission != null && 
+      if (_lastEmission != null &&
           now.difference(_lastEmission!).compareTo(config.step) < 0) {
         return results; // Not ready yet
       }
@@ -145,7 +148,7 @@ class EmotionEngine {
         // Linear SVM model is synchronous
         probabilities = model.predict(features);
       }
-      
+
       // Create result
       final result = EmotionResult.fromInference(
         timestamp: now,
@@ -156,13 +159,13 @@ class EmotionEngine {
 
       results.add(result);
       _lastEmission = now;
-      
-      _log('info', 'Emitted result: ${result.emotion} (${(result.confidence * 100).toStringAsFixed(1)}%)');
-      
+
+      _log('info',
+          'Emitted result: ${result.emotion} (${(result.confidence * 100).toStringAsFixed(1)}%)');
     } catch (e) {
       _log('error', 'Error during inference: $e');
     }
-    
+
     return results;
   }
 
@@ -178,19 +181,21 @@ class EmotionEngine {
     for (final point in _buffer) {
       hrValues.add(point.hr);
       allRrIntervals.addAll(point.rrIntervalsMs);
-      
+
       // Aggregate motion data
       if (point.motion != null) {
         motionAggregate ??= <String, double>{};
         for (final entry in point.motion!.entries) {
-          motionAggregate[entry.key] = (motionAggregate[entry.key] ?? 0.0) + entry.value;
+          motionAggregate[entry.key] =
+              (motionAggregate[entry.key] ?? 0.0) + entry.value;
         }
       }
     }
 
     // Check minimum RR count
     if (allRrIntervals.length < config.minRrCount) {
-      _log('warn', 'Too few RR intervals: ${allRrIntervals.length} < ${config.minRrCount}');
+      _log('warn',
+          'Too few RR intervals: ${allRrIntervals.length} < ${config.minRrCount}');
       return null;
     }
 
@@ -253,7 +258,10 @@ class EmotionEngine {
     return {
       'count': _buffer.length,
       'duration_ms': duration.inMilliseconds,
-      'hr_range': [hrValues.reduce((a, b) => a < b ? a : b), hrValues.reduce((a, b) => a > b ? a : b)],
+      'hr_range': [
+        hrValues.reduce((a, b) => a < b ? a : b),
+        hrValues.reduce((a, b) => a > b ? a : b)
+      ],
       'rr_count': rrCount,
     };
   }

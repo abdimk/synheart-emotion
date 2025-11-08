@@ -117,7 +117,7 @@ class OnnxEmotionModel {
       // ExtraTrees ONNX models output: [label, probabilities] or [probabilities, label]
       // We need to find the output with key "probabilities"
       List<double> probabilities;
-      
+
       if (outputs.length >= 2) {
         // Model has both label and probabilities outputs
         // Find the one actually named "probabilities"
@@ -128,39 +128,44 @@ class OnnxEmotionModel {
             break;
           }
         }
-        
+
         if (probsKey == null) {
           throw EmotionError.badInput('Could not find probabilities output');
         }
-        
+
         final probsValue = outputs[probsKey]!;
         final probsData = await probsValue.asList();
-        
+
         // Handle the shape (1, 3) - first dimension is batch, second is classes
         if (probsData is List && probsData.isNotEmpty) {
           if (probsData[0] is List) {
             // Nested list [[p1, p2, p3]] - extract inner list
             final innerList = probsData[0] as List;
-            probabilities = innerList.map((e) => (e as num).toDouble()).toList();
+            probabilities =
+                innerList.map((e) => (e as num).toDouble()).toList();
           } else {
             // Flat list [p1, p2, p3] - use directly
-            probabilities = probsData.map((e) => (e as num).toDouble()).toList();
+            probabilities =
+                probsData.map((e) => (e as num).toDouble()).toList();
           }
         } else {
-          throw EmotionError.badInput('Unexpected probabilities structure: empty or invalid');
+          throw EmotionError.badInput(
+              'Unexpected probabilities structure: empty or invalid');
         }
       } else {
         // Fallback: use first output (shouldn't happen with ExtraTrees)
         final outputKey = outputs.keys.first;
         final outputValue = outputs[outputKey]!;
         final outputData = await outputValue.asList();
-        
+
         if (outputData is List && outputData.isNotEmpty) {
           if (outputData[0] is List) {
             final innerList = outputData[0] as List;
-            probabilities = innerList.map((e) => (e as num).toDouble()).toList();
+            probabilities =
+                innerList.map((e) => (e as num).toDouble()).toList();
           } else {
-            probabilities = outputData.map((e) => (e as num).toDouble()).toList();
+            probabilities =
+                outputData.map((e) => (e as num).toDouble()).toList();
           }
         } else {
           throw EmotionError.badInput('Unexpected output structure');
