@@ -17,6 +17,7 @@ Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary emotio
 - **⚡ High Performance**: < 5ms inference latency on mid-range devices
 - **🎓 Research-Based**: Models trained on WESAD dataset with 78% accuracy
 - **🧪 Thread-Safe**: Concurrent data ingestion supported on all platforms
+- **🏗️ HSI-Compatible**: Output schema validated against Synheart Core HSI specification
 
 ## 📦 SDKs
 
@@ -57,6 +58,81 @@ pod 'SynheartEmotion', '~> 0.1.0'
 ```
 📖 **Repository**: [synheart-emotion-swift](https://github.com/synheart-ai/synheart-emotion-swift)
 
+## 🏗️ Relationship with Synheart Core (HSI)
+
+Synheart Emotion serves **two deployment modes**:
+
+### 1. **Standalone SDK** (Direct Integration)
+Use synheart-emotion directly for emotion-only applications:
+
+```dart
+import 'package:synheart_emotion/synheart_emotion.dart';
+
+final engine = EmotionEngine.fromPretrained(EmotionConfig());
+engine.push(hr: 72.0, rrIntervalsMs: [...], timestamp: DateTime.now());
+final results = engine.consumeReady();
+```
+
+**Use when:** Your app only needs emotion detection, not full human state intelligence.
+
+### 2. **Via Synheart Core** (HSI Integration)
+Use emotion as part of a complete Human State Interface with focus, behavior, and context:
+
+```dart
+import 'package:synheart_core/synheart_core.dart';
+
+// Initialize synheart-core (includes emotion capability)
+await Synheart.initialize(
+  userId: 'user_123',
+  config: SynheartConfig(enableWear: true),
+);
+
+// Enable emotion interpretation layer
+await Synheart.enableEmotion();
+
+// Get emotion updates (powered by synheart-emotion under the hood)
+Synheart.onEmotionUpdate.listen((emotion) {
+  print('Stress: ${emotion.stress}, Calm: ${emotion.calm}');
+});
+```
+
+**Use when:** You want emotion as part of a unified human state representation (HSV).
+
+### Architecture & Dependencies
+
+```
+┌─────────────────────────────────────────────────────┐
+│          Synheart Core (HSI Runtime)                │
+│                                                     │
+│  EmotionHead Module                                 │
+│    └─► depends on synheart-emotion package         │
+│         (runtime dependency)                        │
+└─────────────────────────────────────────────────────┘
+                      ▲
+                      │
+                      │ runtime: package dependency
+                      │ schema: validates against HSI spec
+                      │
+┌─────────────────────────────────────────────────────┐
+│          synheart-emotion (this repo)               │
+│                                                     │
+│  • Standalone emotion inference SDK                 │
+│  • NO code dependency on synheart-core              │
+│  • Output schema validated against:                 │
+│    ../synheart-core/docs/HSI_SPECIFICATION.md       │
+│                                                     │
+│  EmotionEngine → EmotionResult                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**Key Principles:**
+- ✅ **Standalone**: synheart-emotion works independently, no core dependency
+- ✅ **HSI-Compatible**: Output schema matches HSI EmotionState specification
+- ✅ **Schema Validation**: CI enforces compatibility with HSI spec
+- ✅ **Used by Core**: synheart-core's EmotionHead uses synheart-emotion as implementation
+- ✅ **Backward Compatible**: Existing standalone users unaffected
+
 ## 📂 Repository Structure
 
 This repository serves as the **source of truth** for shared resources across all SDK implementations:
@@ -73,10 +149,12 @@ synheart-emotion/                  # Source of truth repository
 │
 ├── tools/                         # Development tools
 │   ├── synthetic-data-generator/  # Generate test biosignal data
-│   └── wesad-reference-models/    # Research artifacts (14 ML models)
+│   ├── wesad-reference-models/    # Research artifacts (14 ML models)
+│   └── validate_hsi_schema.py     # HSI schema validation (CI)
 │
 ├── examples/                      # Cross-platform example applications
 ├── scripts/                       # Build and deployment scripts
+├── .github/workflows/             # CI/CD including HSI schema checks
 └── CONTRIBUTING.md                # Contribution guidelines for all SDKs
 ```
 
@@ -218,7 +296,9 @@ Research artifacts with 14 pre-trained ML models from WESAD dataset:
 
 ## 🏗️ Architecture
 
-All SDKs implement the same architecture:
+### Standalone Mode
+
+All SDKs implement the same architecture for standalone usage:
 
 ```
 Wearable / Sensor
@@ -231,6 +311,32 @@ Wearable / Sensor
                                   [Model]
                                      │
                               EmotionResult
+```
+
+### HSI Integration Mode
+
+When used via Synheart Core:
+
+```
+Synheart Core SDK
+├── Wear Module (collects HR/RR from wearable)
+│   └── HSI Runtime (processes biosignals, extracts HRV features)
+│       └── EmotionHead Module
+│           └── synheart-emotion EmotionEngine
+│               [Ring Buffer] → [Feature Extraction] → [Normalization]
+│                                     │
+│                                  [Model]
+│                                     │
+│                              EmotionResult
+│                                     │
+│                          mapped to HSV.emotion
+│                                     │
+│                                     ▼
+│                         Complete Human State Vector
+│                         ├─ Emotion (stress, calm, engagement)
+│                         ├─ Focus (cognitive load, clarity)
+│                         ├─ Behavior (interaction patterns)
+│                         └─ Context (activity, environment)
 ```
 
 **Components:**
