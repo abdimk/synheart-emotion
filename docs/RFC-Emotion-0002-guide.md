@@ -1,11 +1,15 @@
-# **RFC: synheart-emotion **
+# RFC-Emotion-0002: synheart-emotion Implementation Guide 
 
-**Status:** Draft  
-**Owner:** Synheart AI – Research Team  
-**Date:** Oct 28, 2025  
+**Status:** Accepted  
+**RFC Type:** Implementation Guide  
+**Target Version:** Emotion SDK v0.1+  
+**Last Updated:** 2025-10-28  
+**Authors:** Synheart AI – Research Team  
 **Repo:** `synheart-ai/synheart-emotion`  
 **Targets:** Flutter/Dart (first-class), with portable core for Python/Node parity later  
-**Depends on:** `synheart-wear` (optional data source), `swip-core` (consumer)
+**Depends on:** `synheart-wear` (optional data source), `swip-core` (consumer)  
+**Consumed by:** `synheart-core` (EmotionHead module implementation)  
+**Schema Validation:** Output validated against `../synheart-core/docs/HSI_SPECIFICATION.md`
 
 ---
 
@@ -25,6 +29,72 @@ Primary use cases:
 
 ---
 
+## 1.1) Relationship with Synheart Core (HSI)
+
+`synheart-emotion` serves **dual deployment modes**:
+
+### **Standalone SDK (Primary)**
+- Direct emotion inference API (`EmotionEngine`)
+- For applications needing only emotion detection
+- Direct integration with biosignal sources (synheart-wear, custom sources)
+- **No code dependency on synheart-core**
+
+### **HSI Integration (EmotionHead Implementation)**
+- Consumed by `synheart-core`'s `EmotionHead` module
+- Part of complete Human State Interface (HSI) representation
+- EmotionHead uses EmotionEngine as implementation layer
+- EmotionResult mapped to HSV.emotion state
+
+### **Dependency Architecture**
+
+```
+Runtime Dependency (package):
+  synheart-core → synheart-emotion
+  (core depends on emotion package)
+
+Schema Validation (no code dependency):
+  synheart-emotion validates against:
+    ../synheart-core/docs/HSI_SPECIFICATION.md
+```
+
+### **Data Flow in HSI Mode**
+
+```
+Synheart Core SDK
+├── Wear Module → collects HR/RR from wearable
+├── HSI Runtime → processes into HSV with HRV features
+└── EmotionHead Module
+    ├── Extracts HR/RR from HSV or raw biosignal stream
+    ├── Creates EmotionEngine instance (from synheart-emotion)
+    ├── Pushes data: EmotionEngine.push(hr, rrIntervals)
+    └── Consumes results: EmotionEngine.consumeReady()
+        └── Maps EmotionResult → HSV.emotion
+```
+
+### **Design Principles**
+
+1. **Implementation Agnostic**: synheart-emotion doesn't know about HSI
+2. **One-Way Dependency**: Core depends on emotion, not vice versa
+3. **Schema Compatibility**: EmotionResult schema matches HSI EmotionState
+4. **Backward Compatible**: Standalone usage remains fully supported
+5. **CI Enforced**: Schema validation runs on every PR
+
+### **HSI Schema Compatibility**
+
+EmotionResult fields must map to HSI EmotionState:
+
+| EmotionResult | HSI EmotionState | Mapping |
+|---------------|------------------|---------|
+| `probabilities["Stressed"]` | `emotion.stress` | Direct (0.0-1.0) |
+| `probabilities["Calm"]` | `emotion.calm` | Direct (0.0-1.0) |
+| `probabilities["Amused"]` | `emotion.engagement` | Direct (0.0-1.0) |
+| `confidence` | `emotion.activation` | Derived formula |
+| `features` | `emotion.valence` | Derived formula |
+
+**Validation**: CI runs `tools/validate_hsi_schema.py` against HSI spec on every commit.
+
+---
+
 ## 2) Definitions
 
 - **RR intervals (ms):** time between heartbeats; used to derive HRV.  
@@ -36,6 +106,8 @@ Primary use cases:
 ---
 
 ## 3) Architecture
+
+### 3.1) Standalone Mode
 
 ```
 Wearable / Sensor
@@ -53,6 +125,40 @@ Wearable / Sensor
                                          ▼
                                      swip-core
 ```
+
+### 3.2) HSI Integration Mode
+
+```
+Synheart Core SDK
+│
+├── Wear Module
+│   └── Collects HR/RR from wearable
+│
+├── HSI Runtime
+│   └── Processes biosignals → HSV with HRV features
+│
+└── EmotionHead Module (uses synheart-emotion)
+    │
+    ├── Extracts HR/RR from HSV metadata
+    │
+    └── synheart-emotion EmotionEngine
+        [RingBuffer W] → [Features] → [Scaler]
+                             │
+                          [Model]
+                             │
+                        EmotionResult
+                             │
+                  mapped to HSV.emotion
+                             │
+                             ▼
+                Complete Human State Vector
+                ├─ Emotion (stress, calm, engagement)
+                ├─ Focus (cognitive load, clarity)
+                ├─ Behavior (interaction patterns)
+                └─ Context (activity, environment)
+```
+
+### 3.3) Core Components
 
 - **RingBuffer:** holds last W seconds of HR/RR.
 - **Feature Extractor:** HR mean, SDNN, RMSSD (+extensible).
@@ -295,8 +401,8 @@ synheart-emotion/
 │  ├─ emotion_engine_test.dart
 │  └─ features_test.dart
 ├─ docs/
-│  ├─ RFC-E1.1.md
-│  └─ MODEL_CARD.md
+|-- RFC-Emotion-0001-spec.md
+│  ├─ RFC-Emotion-0002-guide.md
 ├─ tool/ci.yaml                # GitHub Actions (format, test)
 ├─ pubspec.yaml
 └─ LICENSE
@@ -346,7 +452,7 @@ synheart-emotion/
 
 ## 18) Open Questions
 
-1. **RMSSD vs SDNN weighting:** keep both for robustness or drop RMSSD on devices that don’t stream RR densely?  
+1. **RMSSD vs SDNN weighting:** keep both for robustness or drop RMSSD on devices that don't stream RR densely?  
 2. **Label taxonomy:** do we introduce `Neutral` to stabilize flips?  
 3. **Consent API:** provide a small consent widget or stay headless?  
 4. **Fallback model:** HR-only model when RR missing — include now or E1.2?
@@ -368,3 +474,4 @@ Timer.periodic(const Duration(milliseconds: 500), (_) {
   }
 });
 ```
+

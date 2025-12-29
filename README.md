@@ -1,16 +1,16 @@
 # Synheart Emotion
 
-**On-device emotion inference from biosignals (HR/RR) for Dart, Python, Kotlin, and Swift applications**
+**On-device affective state inference from physiological signals (HR/RR) for Dart, Python, Kotlin, and Swift applications**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform Support](https://img.shields.io/badge/platforms-Dart%20%7C%20Python%20%7C%20Kotlin%20%7C%20Swift-blue.svg)](#-sdks)
 
-Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary emotions from biosignals (heart rate and RR intervals) directly on device, ensuring privacy and real-time performance.
+Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary affective state tendencies from physiological signals (e.g., heart rate and RR intervals) directly on device, ensuring privacy and real-time performance.
 
 ## 🚀 Features
 
 - **📱 Multi-Platform**: Dart/Flutter, Python, Kotlin, Swift
-- **🔄 Real-Time Inference**: Live emotion detection from heart rate and RR intervals
+- **🔄 Real-Time Inference**: Low-latency affective state inference from HR/RR-derived features
 - **🧠 On-Device Processing**: All computations happen locally for privacy
 - **📊 Unified API**: Consistent API across all platforms
 - **🔒 Privacy-First**: No raw biometric data leaves your device
@@ -144,8 +144,9 @@ synheart-emotion/                  # Source of truth repository
 │   └── *.onnx                     # Pre-trained model weights
 │
 ├── docs/                          # Technical documentation
-│   ├── RFC-E1.1.md                # Complete technical specification
 │   └── MODEL_CARD.md              # Model details and performance
+│   ├── RFC-Emotion-0001-spec.md        # Formal specification 
+│   ├── RFC-Emotion-0002-guide.md   # Implementation guide 
 │
 ├── tools/                         # Development tools
 │   ├── synthetic-data-generator/  # Generate test biosignal data
@@ -256,7 +257,9 @@ results.forEach { result in
 }
 ```
 
-## 📊 Supported Emotions
+## 📊 Supported Affective Categories
+
+> These categories represent inferred affective states based on physiological patterns, not definitive emotional labels.
 
 The library currently supports three emotion categories:
 
@@ -382,6 +385,8 @@ All SDKs expose identical functionality:
 
 ## 🔬 Model Details
 
+>The model outputs probabilistic class scores with confidence estimates over a rolling time window; predictions should be interpreted as state tendencies, not ground-truth emotional labels.
+
 **Model Type**: Linear SVM (One-vs-Rest)
 **Task**: Momentary emotion recognition from HR/RR
 **Input Features**: `[hr_mean, sdnn, rmssd]` over a 60s rolling window
@@ -417,8 +422,9 @@ The model is trained on WESAD-derived 3-class subset with artifact rejection and
 - [WESAD Reference Models](tools/wesad-reference-models/README.md) - Research artifacts
 
 ### Technical Documentation
-- [RFC E1.1](docs/RFC-E1.1.md) - Complete technical specification
-- [Model Card](docs/MODEL_CARD.md) - Model details and performance
+- [RFC 0001](docs/RFC-Emotion-0001-spec.md) - Formal specification 
+- [RFC 0002](docs/RFC-Emotion-0002-guide.md) - Implementation guide
+ - [Model Card](docs/MODEL_CARD.md) - Model details and performance
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute (covers all SDKs)
 - [Changelog](CHANGELOG.md) - Version history for all SDKs
 

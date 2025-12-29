@@ -5,15 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
 
-### Planned
-- Enhanced model variants and configurations
-- Additional emotion classes
-- Performance optimizations
-- Expanded platform support
 
-## [0.2.0] - 2024-11-07
+## [0.2.0] - 2025-11-07
 
 ### Breaking Changes
 - **Removed `LinearSvmModel` class**: The `LinearSvmModel` class and `model_linear_svm.dart` file have been removed. The package now focuses exclusively on ONNX models.
@@ -65,7 +59,7 @@ final engine = EmotionEngine.fromPretrained(
 - Package now exclusively uses ONNX models for emotion inference.
 - Improved package structure alignment with Flutter package conventions.
 
-## [0.1.0] - 2025-01-30
+## [0.1.0] - 2025-10-30
 
 This release includes synchronized versions across all platforms. All SDKs are at version 0.1.0.
 
@@ -103,7 +97,7 @@ This release includes synchronized versions across all platforms. All SDKs are a
 - **JSON model loader** for loading trained models from assets
 - Comprehensive test suite with unit tests and performance benchmarks
 - Example applications for each platform
-- Complete documentation (RFC-E1.1, MODEL_CARD, README, CONTRIBUTING)
+- Complete documentation (RFC-Emotion-0001-spec, RFC-Emotion-0002-guide, README, CONTRIBUTING)
 
 #### Publishing Infrastructure
 - GitHub Actions workflows for automated publishing:

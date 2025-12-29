@@ -361,43 +361,8 @@ When contributing, please ensure:
 - All data processing happens locally (no network calls)
 - Compliance with privacy regulations (GDPR, HIPAA considerations)
 
-## 🏷️ Release Process
 
-### Versioning
 
-We follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR**: Breaking changes (affect all SDKs)
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
-**Important**: All SDKs must maintain version consistency. When releasing, all SDK versions should be updated to match.
-
-### Release Checklist
-
-- [ ] All tests pass across all SDKs
-- [ ] Documentation is updated for affected SDKs
-- [ ] Root CHANGELOG.md is updated (single changelog for all SDKs)
-- [ ] Version is bumped in all SDKs:
-  - `sdks/flutter/pubspec.yaml`
-  - `sdks/python/pyproject.toml`
-  - `sdks/android/build.gradle`
-  - `sdks/ios/SynheartEmotion.podspec` and `Package.swift`
-- [ ] Release notes are written
-- [ ] Publishing workflows are tested (dry-run)
-- [ ] Breaking changes are documented
-- [ ] Migration guides are provided (if needed)
-
-### Publishing Process
-
-Releases are automated via GitHub Actions workflows:
-
-1. Create a GitHub release with tag `vX.Y.Z`
-2. All SDK publishing workflows trigger automatically
-3. Verify packages appear in repositories
-4. For Android: Manually close and release Maven Central staging repository
-
-See `README.md` for publishing workflow details.
 
 ## 🔄 Maintaining API Consistency
 
@@ -408,6 +373,23 @@ Since this is a multi-platform SDK, maintain API consistency:
 - **Error Handling**: Consistent error types and messages
 - **Data Structures**: Equivalent data structures (Result objects, Config objects)
 - **Behavior**: Same algorithm results across platforms
+
+## 🏗️ Coordination with Synheart Core (HSI)
+
+synheart-emotion is consumed by `synheart-core`'s EmotionHead module. When making changes, coordinate with synheart-core to ensure compatibility.
+
+### Dependency Architecture
+
+```
+Runtime Dependency (package):
+  synheart-core → synheart-emotion
+  (core depends on emotion package)
+
+Schema Validation (no code dependency):
+  synheart-emotion validates against:
+    ../synheart-core/docs/HSI_SPECIFICATION.md
+```
+
 
 ## 💬 Community Guidelines
 
@@ -435,8 +417,7 @@ Since this is a multi-platform SDK, maintain API consistency:
   - Root `README.md` for overview
   - SDK-specific READMEs in `sdks/*/README.md`
   - Root `CHANGELOG.md` for version history (single file for all SDKs)
-  - RFC documents in `docs/RFC-E1.1.md`
-  - Model Card in `docs/MODEL_CARD.md`
+  - RFC documents in `docs/RFC-Emotion-0001-spec.md` and `docs/RFC-Emotion-0002-guide.md`
 - **Issues**: Search existing issues before creating new ones
 - **Discussions**: Use GitHub Discussions for questions
 - **Pull Requests**: Ask questions in PR comments
