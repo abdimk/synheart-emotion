@@ -141,29 +141,70 @@ This repository serves as the **source of truth** for shared resources across al
 
 ```
 synheart-emotion/                  # Source of truth repository
+│
 ├── models/                        # ML model definitions and assets
-│   ├── wesad_emotion_v1_0.json    # Model configuration
-│   └── *.onnx                     # Pre-trained model weights
+│   ├── ExtraTrees_60_5_nozipmap.onnx          # 60s window, 5s step model
+│   ├── ExtraTrees_120_5_nozipmap.onnx         # 120s window, 5s step model
+│   ├── ExtraTrees_120_60_nozipmap.onnx         # 120s window, 60s step model
+│   ├── ExtraTrees_metadata_60_5_nozipmap.json # Model metadata (60s/5s)
+│   ├── ExtraTrees_metadata_120_5_nozipmap.json # Model metadata (120s/5s)
+│   └── ExtraTrees_metadata_120_60_nozipmap.json # Model metadata (120s/60s)
 │
 ├── docs/                          # Technical documentation
-│   └── MODEL_CARD.md              # Model details and performance
-│   ├── RFC-Emotion-0001-spec.md        # Formal specification 
-│   ├── RFC-Emotion-0002-guide.md   # Implementation guide 
+│   ├── MODEL_CARD.md              # Model details and performance
+│   ├── RFC-Emotion-0001-spec.md   # Formal specification
+│   └── RFC-Emotion-0002-guide.md  # Implementation guide
 │
 ├── tools/                         # Development tools
+│   ├── README.md                  # Tools overview
 │   ├── synthetic-data-generator/  # Generate test biosignal data
+│   │   ├── cli.py                 # Command-line interface
+│   │   ├── setup.py               # Package setup
+│   │   ├── syndata/               # Generator package
+│   │   └── examples/              # Usage examples
 │   └── wesad-reference-models/   # Research artifacts (pre-trained ML models)
 │       ├── inference.py           # Reference inference code with ONNX support
 │       ├── requirements.txt       # Python dependencies
 │       ├── test_inference.py      # Test suite
 │       └── models/                # Pre-trained models by configuration
 │           ├── w60s5_binary/      # 60s window, 5s step models
+│           │   ├── ExtraTrees.pkl, ExtraTrees_metadata.json
+│           │   ├── RF.pkl, RF_metadata.json
+│           │   ├── LogReg.pkl, LogReg_metadata.json
+│           │   ├── XGB.pkl, LinearSVM.pkl
 │           ├── w120s5_binary/     # 120s window, 5s step models
-│           └── w120s60_binary/   # 120s window, 60s step models
+│           │   ├── ExtraTrees.pkl, ExtraTrees_metadata.json
+│           │   ├── RF.pkl, RF_metadata.json
+│           │   ├── LogReg.pkl, LogReg_metadata.json
+│           │   └── XGB.pkl, LinearSVM.pkl
+│           └── w120s60_binary/    # 120s window, 60s step models
+│               ├── ExtraTrees.onnx, ExtraTrees.pkl, ExtraTrees_metadata.json
+│               ├── RF.onnx, RF.pkl, RF_metadata.json
+│               ├── LogReg.onnx, LogReg.pkl, LogReg_metadata.json
+│               └── XGB.pkl, LinearSVM.pkl
 │
 ├── examples/                      # Cross-platform example applications
+│   ├── android/                   # Android (Kotlin) example
+│   ├── flutter/                   # Flutter/Dart example
+│   │   ├── lib/                   # Dart source code
+│   │   ├── assets/ml/             # Model files for Flutter
+│   │   └── android/, ios/, etc.   # Platform-specific configs
+│   ├── ios/                       # iOS (Swift) example
+│   └── python-example/            # Python example
+│       ├── basic_usage.py         # Basic usage demo
+│       ├── cli_demo.py            # CLI demonstration
+│       ├── streaming_data.py     # Streaming data example
+│       └── custom_config.py      # Custom configuration example
+│
 ├── scripts/                       # Build and deployment scripts
+│   ├── copy-models.py             # Python script to copy models
+│   └── copy-models.sh             # Shell script to copy models
+│
 ├── .github/workflows/             # CI/CD including HSI schema checks
+│
+├── LICENSE                        # MIT License
+├── README.md                      # This file
+├── CHANGELOG.md                   # Version history for all SDKs
 └── CONTRIBUTING.md                # Contribution guidelines for all SDKs
 ```
 
