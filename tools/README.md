@@ -31,15 +31,44 @@ python cli.py --emotion Calm --duration 60 --output ./data
 
 **Purpose**: Research artifacts and training pipeline reference
 
-Pre-trained models from the WESAD dataset for research and model comparison.
+Pre-trained models from the WESAD dataset for research and model comparison. Includes multiple model configurations and types for binary emotion classification (Baseline vs Stress).
 
 **Contains**:
-- 14 pre-trained ML models (XGBoost, RandomForest, SVM, etc.)
-- Feature scaler and metadata
-- Reference inference code
-- Performance metrics and confusion matrices
+- Pre-trained ML models organized by window configuration:
+  - `w60s5_binary`: 60-second windows, 5-second steps
+  - `w120s5_binary`: 120-second windows, 5-second steps
+  - `w120s60_binary`: 120-second windows, 60-second steps
+- Multiple model types per configuration (ExtraTrees, RandomForest, LogisticRegression, XGBoost, etc.)
+- Model metadata with performance metrics
+- Reference inference code with random data generation
+- Support for ONNX, scikit-learn, and PyTorch models
+
+**Features**:
+- 🔬 Research-grade models for comparison
+- 📊 Multiple window configurations
+- 🤖 Multiple model architectures
+- 🎲 Built-in random data generation for testing
+- 📈 Performance metrics included
 
 **⚠️ Not for Production**: This is research code. For production, use [`sdks/python/`](../sdks/python/)
+
+**Quick Start**:
+```python
+from tools.wesad_reference_models.inference import predict, generate_random_features
+
+# Generate random test data
+data = generate_random_features(emotion="baseline", n_samples=1, seed=42)
+
+# Run inference
+results = predict(
+    data=data,
+    config_name="w60s5_binary",
+    model_name="extratrees",
+    return_probabilities=True
+)
+
+print(results[0]['label'])  # "Baseline" or "Stress"
+```
 
 **Documentation**: See [wesad-reference-models/README.md](wesad-reference-models/README.md)
 
@@ -71,8 +100,11 @@ tools/
 │   ├── cli.py                     # Command-line interface
 │   └── README.md                  # Full documentation
 └── wesad-reference-models/        # Research artifacts
-    ├── inference.py               # Reference inference
-    ├── models/                    # Pre-trained models
+    ├── inference.py               # Reference inference with random data gen
+    ├── models/                    # Pre-trained models by configuration
+    │   ├── w60s5_binary/          # 60s window, 5s step models
+    │   ├── w120s5_binary/         # 120s window, 5s step models
+    │   └── w120s60_binary/        # 120s window, 60s step models
     └── README.md                  # Documentation
 ```
 
