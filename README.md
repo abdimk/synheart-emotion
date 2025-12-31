@@ -14,6 +14,7 @@ Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary affect
 - **🧠 On-Device Processing**: All computations happen locally for privacy
 - **📊 Unified API**: Consistent API across all platforms
 - **🔒 Privacy-First**: No raw biometric data leaves your device
+- **⚡ High Performance**: < 10ms inference latency (ONNX models)
 - **🎓 Research-Based**: Models trained on WESAD dataset with 78.4% accuracy (72.6% F1 score)
 - **🧬 14 HRV Features**: Comprehensive feature extraction (time-domain, frequency-domain, non-linear)
 - **🤖 ExtraTrees Models**: ONNX-optimized classifiers for on-device inference
@@ -27,7 +28,7 @@ All SDKs provide **identical functionality** with platform-idiomatic APIs. Each 
 ### Dart/Flutter SDK
 ```yaml
 dependencies:
-  synheart_emotion: ^0.2.1
+  synheart_emotion: ^0.2.3
 ```
 📖 **Repository**: [synheart-emotion-dart](https://github.com/synheart-ai/synheart-emotion-dart)
 
@@ -151,8 +152,14 @@ synheart-emotion/                  # Source of truth repository
 │
 ├── tools/                         # Development tools
 │   ├── synthetic-data-generator/  # Generate test biosignal data
-│   ├── wesad-reference-models/    # Research artifacts (14 ML models)
-│   └── validate_hsi_schema.py     # HSI schema validation (CI)
+│   └── wesad-reference-models/   # Research artifacts (pre-trained ML models)
+│       ├── inference.py           # Reference inference code with ONNX support
+│       ├── requirements.txt       # Python dependencies
+│       ├── test_inference.py      # Test suite
+│       └── models/                # Pre-trained models by configuration
+│           ├── w60s5_binary/      # 60s window, 5s step models
+│           ├── w120s5_binary/     # 120s window, 5s step models
+│           └── w120s60_binary/   # 120s window, 60s step models
 │
 ├── examples/                      # Cross-platform example applications
 ├── scripts/                       # Build and deployment scripts
@@ -196,9 +203,12 @@ for result in results:
 ```dart
 import 'package:synheart_emotion/synheart_emotion.dart';
 
-// Initialize the emotion engine (default: 120s window, 60s step)
+// Initialize the emotion engine
 final engine = EmotionEngine.fromPretrained(
-  const EmotionConfig(),
+  const EmotionConfig(
+    window: Duration(seconds: 60),
+    step: Duration(seconds: 5),
+  ),
 );
 
 // Push biometric data
@@ -208,8 +218,8 @@ engine.push(
   timestamp: DateTime.now(),
 );
 
-// Get results (async for ONNX models)
-final results = await engine.consumeReadyAsync();
+// Get results
+final results = engine.consumeReady();
 for (final result in results) {
   print('Emotion: ${result.emotion} (${result.confidence})');
 }
@@ -259,10 +269,11 @@ results.forEach { result in
 
 > These categories represent inferred affective states based on physiological patterns, not definitive emotional labels.
 
-The library currently supports two emotion categories (binary classification):
+The library currently supports three emotion categories:
 
-- **😌 Baseline**: Relaxed, peaceful emotional state
-- **😰 Stress**: Anxious, tense emotional state
+- **😊 Amused**: Positive, engaged emotional state
+- **😌 Calm**: Relaxed, peaceful emotional state
+- **😰 Stressed**: Anxious, tense emotional state
 
 ## 🛠️ Development Tools
 
@@ -286,11 +297,26 @@ Exports to: CSV, JSON, Python, Kotlin, Swift
 
 ### WESAD Reference Models
 
-Research artifacts with pre-trained ML models from WESAD dataset:
+Research artifacts with pre-trained ML models from WESAD dataset organized by window configuration:
 
-- Various research models for comparison and experimentation
+- **Model Configurations**: w60s5_binary, w120s5_binary, w120s60_binary
+- **Model Types**: ExtraTrees, RandomForest, LogisticRegression, XGBoost, LinearSVM
+- **Formats**: ONNX (with built-in normalization) and scikit-learn pickle files
+- **Features**: 14 HRV features (RMSSD, Mean_RR, HRV_SDNN, pNN50, etc.)
+- **Random Data Generation**: Built-in function for testing with realistic HRV features
 - For research and model comparison only
-- **Not for production use** (use SDKs with ExtraTrees models instead)
+- **Not for production use** (use SDKs instead)
+
+**Quick Start:**
+```python
+from tools.wesad_reference_models.inference import predict, generate_random_features
+
+# Generate random test data
+data = generate_random_features(emotion="baseline", n_samples=1, seed=42)
+
+# Run inference
+results = predict(data, config_name="w60s5_binary", model_name="extratrees")
+```
 
 📖 [Research Models Documentation](tools/wesad-reference-models/README.md)
 
@@ -340,11 +366,11 @@ Synheart Core SDK
 ```
 
 **Components:**
-- **Ring Buffer**: Holds last 120s of HR/RR data (configurable, default: 120s)
-- **Feature Extractor**: Computes 14 HRV features (time-domain, frequency-domain, non-linear)
-- **Scaler**: Standardizes features using training μ/σ (built into ONNX model)
-- **Model**: ExtraTrees (Extremely Randomized Trees) classifier
-- **Emitter**: Throttles outputs (default: every 60s)
+- **Ring Buffer**: Holds last 60s of HR/RR data (configurable)
+- **Feature Extractor**: Computes HR mean, SDNN, RMSSD
+- **Scaler**: Standardizes features using training μ/σ
+- **Model**: Linear SVM (One-vs-Rest) with softmax
+- **Emitter**: Throttles outputs (default: every 5s)
 
 ## 🎨 API Parity
 
@@ -357,8 +383,7 @@ All SDKs expose identical functionality:
 | EmotionResult | ✅ | ✅ | ✅ | ✅ |
 | EmotionError | ✅ | ✅ | ✅ | ✅ |
 | Feature Extraction | ✅ | ✅ | ✅ | ✅ |
-| 14 HRV Features | ✅ | ✅ | ✅ | ✅ |
-| ExtraTrees ONNX Models | ✅ | ✅ | ✅ | ✅ |
+| Linear SVM Model | ✅ | ✅ | ✅ | ✅ |
 | Thread-Safe | ✅ | ✅ | ✅ | ✅ |
 | Sliding Window | ✅ | ✅ | ✅ | ✅ |
 
@@ -385,40 +410,15 @@ All SDKs expose identical functionality:
 
 >The model outputs probabilistic class scores with confidence estimates over a rolling time window; predictions should be interpreted as state tendencies, not ground-truth emotional labels.
 
-**Model Type**: ExtraTrees (Extremely Randomized Trees)
-**Task**: Binary emotion recognition from HR/RR (Baseline vs Stress)
-**Input Features**: 14 HRV features over a configurable rolling window
-**Performance** (LOSO CV on WESAD dataset):
-- Accuracy: 78.4% (default model: ExtraTrees_120_60)
-- F1 Score: 72.6% (default model: ExtraTrees_120_60)
+**Model Type**: ExtraTrees Classifier (ONNX-optimized)
+**Task**: Binary emotion recognition (Baseline vs Stress) from HR/RR-derived HRV features
+**Input Features**: 14 HRV features (`RMSSD`, `Mean_RR`, `HRV_SDNN`, `pNN50`, `HRV_HF`, `HRV_LF`, `HRV_HF_nu`, `HRV_LF_nu`, `HRV_LFHF`, `HRV_TP`, `HRV_SD1SD2`, `HRV_Sampen`, `HRV_DFA_alpha1`, `HR`) over configurable rolling windows (60s or 120s)
+**Performance**:
+- Accuracy: ~78.4% (LOSO CV)
+- Macro-F1: ~72.6% (LOSO CV)
+- Latency: < 10ms on modern mid-range devices (ONNX models)
 
-The models are trained on WESAD-derived binary classification subset with artifact rejection and normalization.
-
-### Available Models
-
-All models use **14 HRV features** and **binary classification** (Baseline/Stress):
-
-| Model | Window | Step | Accuracy | F1 Score | Use Case |
-|-------|--------|------|----------|----------|----------|
-| **ExtraTrees_120_60** (default) | 120s | 60s | 78.4% | 72.6% | Balanced accuracy and update frequency |
-| ExtraTrees_120_5 | 120s | 5s | 77.9% | 72.7% | High-frequency updates with longer context |
-| ExtraTrees_60_5 | 60s | 5s | 76.7% | 70.4% | Fast updates with shorter context window |
-
-**Feature Set** (14 features in order):
-1. RMSSD (Root Mean Square of Successive Differences)
-2. Mean_RR (Mean RR interval)
-3. HRV_SDNN (Standard Deviation of NN intervals)
-4. pNN50 (Percentage of successive differences > 50ms)
-5. HRV_HF (High Frequency power)
-6. HRV_LF (Low Frequency power)
-7. HRV_HF_nu (Normalized HF)
-8. HRV_LF_nu (Normalized LF)
-9. HRV_LFHF (LF/HF ratio)
-10. HRV_TP (Total Power)
-11. HRV_SD1SD2 (Poincaré plot ratio)
-12. HRV_Sampen (Sample Entropy)
-13. HRV_DFA_alpha1 (Detrended Fluctuation Analysis)
-14. HR (Heart Rate in BPM)
+The models are trained on WESAD-derived binary classification (Baseline vs Stress) with artifact rejection and normalization. Multiple window configurations available (60s/5s, 120s/5s, 120s/60s).
 
 📖 [Model Card](docs/MODEL_CARD.md) | [RFC E1.1](docs/RFC-E1.1.md)
 
@@ -430,7 +430,7 @@ All models use **14 HRV features** and **binary classification** (Baseline/Stres
 - **Privacy-First Design**: No built-in storage - you control what gets persisted
 - **Not a Medical Device**: This library is for wellness and research purposes only
 
-⚠️ **Important**: The default model weights are trained on the WESAD dataset and achieve 78.4% accuracy (72.6% F1 score) for binary classification. For production use, consider training on your own data if needed.
+⚠️ **Important**: The default model weights are trained on the WESAD dataset and achieve 78% accuracy. For production use, consider training on your own data if needed.
 
 ## 📚 Documentation
 
@@ -442,7 +442,7 @@ All models use **14 HRV features** and **binary classification** (Baseline/Stres
 
 ### Tools Documentation
 - [Synthetic Data Generator](tools/synthetic-data-generator/README.md) - Test data generation
-- [WESAD Reference Models](tools/wesad-reference-models/README.md) - Research artifacts
+- [WESAD Reference Models](tools/wesad-reference-models/README.md) - Research artifacts with ONNX support and random data generation
 
 ### Technical Documentation
 - [RFC 0001](docs/RFC-Emotion-0001-spec.md) - Formal specification 
@@ -501,14 +501,14 @@ for data_point in get_biosignal_stream():
 
 See [Swift SDK Examples](https://github.com/synheart-ai/synheart-emotion-swift#healthkit-integration) for HealthKit integration.
 
-## 📈 Performance Metrics
+## 📈 Performance Targets
 
-**Model Performance (LOSO CV on WESAD dataset):**
-- **Accuracy**: 78.4% (default: ExtraTrees_120_60)
-- **F1 Score**: 72.6% (default: ExtraTrees_120_60)
-- **Model Size**: ~200-300 KB per ONNX model
-- **Memory**: < 5 MB (engine + buffers + ONNX runtime)
-- **Task**: Binary classification (Baseline vs Stress)
+**Target Performance (mid-range device):**
+- **Latency**: < 5ms per inference
+- **Model Size**: < 100 KB
+- **CPU Usage**: < 2% during active streaming
+- **Memory**: < 3 MB (engine + buffers)
+- **Accuracy**: 78% on WESAD dataset (3-class emotion recognition)
 
 ## 🤝 Contributing
 
