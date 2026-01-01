@@ -2,7 +2,7 @@
 
 **On-device affective state inference from physiological signals (HR/RR) for Dart, Python, Kotlin, and Swift applications**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform Support](https://img.shields.io/badge/platforms-Dart%20%7C%20Python%20%7C%20Kotlin%20%7C%20Swift-blue.svg)](#-sdks)
 
 Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary affective state tendencies from physiological signals (e.g., heart rate and RR intervals) directly on device, ensuring privacy and real-time performance.
@@ -498,7 +498,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 
