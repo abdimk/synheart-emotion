@@ -31,7 +31,7 @@ class EmotionDemoPage extends StatefulWidget {
 }
 
 class _EmotionDemoPageState extends State<EmotionDemoPage> {
-  late EmotionEngine _engine;
+  EmotionEngine? _engine;
   Timer? _dataTimer;
   Timer? _inferenceTimer;
   
@@ -39,36 +39,147 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
   final List<String> _logs = [];
   
   bool _isRunning = false;
+  bool _isInitialized = false;
   String _currentEmotion = 'Unknown';
   double _currentConfidence = 0.0;
   Map<String, double> _currentProbabilities = {};
+  String? _currentModelPath;
+  Duration _currentStepSize = const Duration(seconds: 5);
+  
+  // Available models from assets
+  final List<Map<String, String>> _availableModels = [
+    {
+      'name': 'ExtraTrees 60s/5s',
+      'path': 'assets/ml/ExtraTrees_60_5_nozipmap.onnx',
+      'description': '60s window, 5s step',
+    },
+    {
+      'name': 'ExtraTrees 120s/5s',
+      'path': 'assets/ml/ExtraTrees_120_5_nozipmap.onnx',
+      'description': '120s window, 5s step',
+    },
+    {
+      'name': 'ExtraTrees 120s/60s',
+      'path': 'assets/ml/ExtraTrees_120_60_nozipmap.onnx',
+      'description': '120s window, 60s step',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeEngine();
+    // Load default model
+    _loadModel('assets/ml/ExtraTrees_120_60_nozipmap.onnx');
   }
 
-  void _initializeEngine() {
-    _engine = EmotionEngine.fromPretrained(
-      const EmotionConfig(
-        window: Duration(seconds: 60),
-        step: Duration(seconds: 2),
-        minRrCount: 30,
-      ),
-      onLog: (level, message, {context}) {
-        setState(() {
-          _logs.add('[$level] $message');
-          if (_logs.length > 50) {
-            _logs.removeAt(0); // Keep only last 50 logs
-          }
-        });
+  Future<void> _loadModel(String modelPath) async {
+    setState(() {
+      _isInitialized = false;
+      _logs.add('[INFO] Loading model: $modelPath');
+    });
+
+    try {
+      // Determine window and step size from model path
+      int windowSize = 120;
+      int stepSize = 60;
+      
+      if (modelPath.contains('120_5')) {
+        windowSize = 120;
+        stepSize = 5;
+      } else if (modelPath.contains('120_60')) {
+        windowSize = 120;
+        stepSize = 60;
+      } else if (modelPath.contains('60_5')) {
+        windowSize = 60;
+        stepSize = 5;
+      }
+
+      // Load ONNX model
+      final onnxModel = await OnnxEmotionModel.loadFromAsset(
+        modelAssetPath: modelPath,
+      );
+      
+      // Create config with appropriate window and step sizes
+      final config = EmotionConfig(
+        window: Duration(seconds: windowSize),
+        step: Duration(seconds: stepSize),
+        modelId: onnxModel.modelId,
+      );
+      
+      // Create engine with loaded model
+      _engine = EmotionEngine.fromPretrained(
+        config,
+        model: onnxModel,
+        onLog: (level, message, {context}) {
+          setState(() {
+            _logs.add('[$level.toUpperCase()] $message');
+            if (_logs.length > 50) {
+              _logs.removeAt(0);
+            }
+          });
+        },
+      );
+      
+      setState(() {
+        _isInitialized = true;
+        _currentModelPath = modelPath;
+        _currentStepSize = Duration(seconds: stepSize);
+        _logs.add('[INFO] Engine initialized with 14-feature extraction');
+        _logs.add('[INFO] Model: ${modelPath.split('/').last}');
+        _logs.add('[INFO] Window: ${windowSize}s, Step: ${stepSize}s');
+      });
+    } catch (e) {
+      setState(() {
+        _isInitialized = false;
+        _currentModelPath = null;
+        _logs.add('[ERROR] Failed to load model: $e');
+      });
+    }
+  }
+
+  Future<void> _showModelSelectionDialog() async {
+    final selectedModel = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Model'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ..._availableModels.map((model) {
+                  return ListTile(
+                    title: Text(model['name']!),
+                    subtitle: Text(model['description']!),
+                    trailing: _currentModelPath == model['path']
+                        ? const Icon(Icons.check, color: Colors.green)
+                        : null,
+                    onTap: () {
+                      Navigator.of(context).pop(model['path']);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
       },
     );
+
+    if (selectedModel != null) {
+      await _loadModel(selectedModel);
+    }
   }
 
   void _startSimulation() {
-    if (_isRunning) return;
+    if (_isRunning || !_isInitialized || _engine == null) return;
     
     setState(() {
       _isRunning = true;
@@ -80,8 +191,8 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
       _simulateDataPoint();
     });
 
-    // Run inference every 2 seconds
-    _inferenceTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    // Run inference based on step size
+    _inferenceTimer = Timer.periodic(_currentStepSize, (_) {
       _runInference();
     });
   }
@@ -110,7 +221,7 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
       rrIntervals.add(rr.clamp(400.0, 1200.0));
     }
 
-    _engine.push(
+    _engine!.push(
       hr: hr,
       rrIntervalsMs: rrIntervals,
       timestamp: DateTime.now().toUtc(),
@@ -118,14 +229,29 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
   }
 
   void _runInference() async {
-    final results = await _engine.consumeReady();
+    if (_engine == null) return;
     
-    for (final result in results) {
+    try {
+      final results = await _engine!.consumeReadyAsync();
+      
+      for (final result in results) {
+        setState(() {
+          _results.add(result);
+          _currentEmotion = result.emotion;
+          _currentConfidence = result.confidence;
+          _currentProbabilities = result.probabilities;
+          _logs.add('[INFO] Inference: ${result.emotion} (${(result.confidence * 100).toStringAsFixed(1)}%)');
+          if (_logs.length > 50) {
+            _logs.removeAt(0);
+          }
+        });
+      }
+    } catch (e) {
       setState(() {
-        _results.add(result);
-        _currentEmotion = result.emotion;
-        _currentConfidence = result.confidence;
-        _currentProbabilities = result.probabilities;
+        _logs.add('[ERROR] Inference failed: $e');
+        if (_logs.length > 50) {
+          _logs.removeAt(0);
+        }
       });
     }
   }
@@ -138,7 +264,7 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
       _currentConfidence = 0.0;
       _currentProbabilities.clear();
     });
-    _engine.clear();
+    _engine?.clear();
   }
 
   @override
@@ -155,6 +281,11 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
         title: const Text('Synheart Emotion Demo'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.model_training),
+            onPressed: _showModelSelectionDialog,
+            tooltip: 'Select Model',
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfo,
           ),
@@ -165,12 +296,73 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Status indicator
+            if (!_isInitialized)
+              Card(
+                color: Colors.orange[100],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'No model loaded',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _showModelSelectionDialog,
+                        icon: const Icon(Icons.model_training),
+                        label: const Text('Select Model'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
+            // Current model indicator
+            if (_isInitialized && _currentModelPath != null)
+              Card(
+                color: Colors.green[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Model Loaded',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentModelPath!.split('/').last,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz),
+                        onPressed: _showModelSelectionDialog,
+                        tooltip: 'Change Model',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
             // Control buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _isRunning ? null : _startSimulation,
+                  onPressed: (_isRunning || !_isInitialized) ? null : _startSimulation,
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Start'),
                 ),
@@ -266,7 +458,7 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text(
-                            'Buffer: ${_engine.getBufferStats()['count']} points',
+                            'Buffer: ${_engine?.getBufferStats()['count'] ?? 0} points',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -294,7 +486,7 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
                               '${result.timestamp.toLocal().toString().substring(11, 19)}',
                             ),
                             trailing: Text(
-                              'HR: ${result.features['hr_mean']?.toStringAsFixed(1) ?? 'N/A'}',
+                              'Features: ${result.features.length}',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           );
@@ -313,11 +505,9 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
 
   Color _getEmotionColor(String emotion) {
     switch (emotion.toLowerCase()) {
-      case 'amused':
-        return Colors.orange;
-      case 'calm':
+      case 'baseline':
         return Colors.blue;
-      case 'stressed':
+      case 'stress':
         return Colors.red;
       default:
         return Colors.grey;
@@ -330,15 +520,17 @@ class _EmotionDemoPageState extends State<EmotionDemoPage> {
       builder: (context) => AlertDialog(
         title: const Text('About This Demo'),
         content: const Text(
-          'This demo simulates real-time emotion inference from heart rate and '
-          'RR interval data using the Synheart Emotion library.\n\n'
+          'This demo performs real-time emotion inference from simulated heart rate and '
+          'RR interval data using 14 HRV features.\n\n'
           'The app generates realistic biometric data and runs emotion inference '
-          'every 2 seconds using a 60-second sliding window.\n\n'
-          'Features demonstrated:\n'
-          '• Real-time emotion detection\n'
-          '• Probability visualization\n'
-          '• Buffer management\n'
-          '• Logging system',
+          'using a sliding window approach.\n\n'
+          'Models: ExtraTrees (14 HRV features)\n'
+          'Features:\n'
+          '• Time-domain: RMSSD, Mean_RR, HRV_SDNN, pNN50\n'
+          '• Frequency-domain: HF, LF, HF_nu, LF_nu, LFHF, TP\n'
+          '• Non-linear: SD1SD2, SampEn, DFA_alpha1\n'
+          '• Heart Rate\n\n'
+          'Powered by synheart_emotion package.',
         ),
         actions: [
           TextButton(

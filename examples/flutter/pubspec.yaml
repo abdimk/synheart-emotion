@@ -9,9 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  synheart_emotion:
-    path: ../../sdks/flutter
   cupertino_icons: ^1.0.2
+  synheart_emotion: ^0.2.2
 
 dev_dependencies:
   flutter_test:
@@ -21,5 +20,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/ml/extratrees_wrist_all_v1_0.onnx
-    - assets/ml/extratrees_wrist_all_v1_0.meta.json
+    - assets/ml/ExtraTrees_60_5_nozipmap.onnx
+    - assets/ml/ExtraTrees_metadata_60_5_nozipmap.json
+    - assets/ml/ExtraTrees_120_5_nozipmap.onnx
+    - assets/ml/ExtraTrees_metadata_120_5_nozipmap.json
+    - assets/ml/ExtraTrees_120_60_nozipmap.onnx
+    - assets/ml/ExtraTrees_metadata_120_60_nozipmap.json

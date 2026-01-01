@@ -10,74 +10,143 @@ This directory contains pre-trained models from the WESAD dataset for research a
 
 ## Contents
 
-- **SDK-aligned pre-trained ML models** from the WESAD dataset
-- Torch and scikit-learn checkpoints (`*.pth`, `*.pkl`)
-- Feature scaler (`scaler_wrist_all.pkl`) and metadata
-- Reference inference code (`inference.py`)
+- **Pre-trained ML models** from the WESAD dataset organized by window configuration
+- ONNX, PyTorch, and scikit-learn checkpoints (`*.onnx`, `*.pth`, `*.pkl`)
+- Model metadata JSON files with feature schemas and performance metrics
+- Reference inference code (`inference.py`) with random data generation
 
-## Emotion Labels (WESAD)
+## Model Configurations
+
+Models are organized by window configuration:
+
+- **`w60s5_binary`**: 60-second windows, 5-second steps
+- **`w120s5_binary`**: 120-second windows, 5-second steps
+- **`w120s60_binary`**: 120-second windows, 60-second steps
+
+Each configuration directory contains multiple model types (ExtraTrees, RandomForest, LogisticRegression, etc.)
+
+## Emotion Labels (Binary Classification)
 
 - **0** → Baseline (Calm)
 - **1** → Stress
-- **2** → Amusement
 
-## Input Data
+## Input Features
 
-Input is a Pandas DataFrame (or dict/list/NumPy array) containing the HRV summary
-features consumed by `inference.py`. Typical pipeline:
-1. Clean ECG with `nk.ecg_clean()`
-2. Detect R-peaks via `nk.ecg_peaks()`
-3. Compute HRV metrics with `nk.hrv()` (2-minute sliding windows)
-4. Assemble the following columns in the order defined in `FEATURE_NAMES` of
-   `inference.py`: `SDNN`, `RMSSD`, `pNN50`, `Mean_RR`, `HR_mean`
-5. Missing values are imputed with the median before scaling
+Models expect 14 HRV (Heart Rate Variability) features in the following order:
 
-Scaling is applied automatically using `scaler_wrist_all.pkl` when calling
-`prepare_input()` or any of the public helpers in `inference.py`.
+1. `RMSSD` (ms) - Root Mean Square of Successive Differences
+2. `Mean_RR` (ms) - Mean RR interval
+3. `HRV_SDNN` (ms) - Standard Deviation of NN intervals
+4. `pNN50` (%) - Percentage of NN intervals > 50ms
+5. `HRV_HF` (ms²) - High Frequency power
+6. `HRV_LF` (ms²) - Low Frequency power
+7. `HRV_HF_nu` (normalized) - Normalized HF power
+8. `HRV_LF_nu` (normalized) - Normalized LF power
+9. `HRV_LFHF` (ratio) - LF/HF ratio
+10. `HRV_TP` (ms²) - Total Power
+11. `HRV_SD1SD2` (ratio) - Poincaré plot SD1/SD2 ratio
+12. `HRV_Sampen` (entropy) - Sample Entropy
+13. `HRV_DFA_alpha1` (alpha) - Detrended Fluctuation Analysis alpha1
+14. `HR` (bpm) - Heart Rate
 
 ## Usage (Research Only)
 
+### Basic Usage
+
+```python
+from inference import predict, list_available_models, generate_random_features
+import pandas as pd
+
+# List available models
+available = list_available_models()
+print(available)
+# {
+#   'w60s5_binary': ['extratrees', 'rf', 'logreg', 'xgb', ...],
+#   'w120s5_binary': ['extratrees', 'rf', 'logreg', ...],
+#   'w120s60_binary': ['extratrees', 'rf', 'logreg', ...]
+# }
+
+# Generate random test data
+baseline_data = generate_random_features(emotion="baseline", n_samples=1, seed=42)
+print(baseline_data)
+
+# Run inference
+results = predict(
+    data=baseline_data,
+    config_name="w60s5_binary",
+    model_name="extratrees",
+    return_probabilities=True
+)
+
+print(results)
+# [{
+#   'numeric': 0,
+#   'label': 'Baseline',
+#   'probabilities': {'Baseline': 0.85, 'Stress': 0.15}
+# }]
+```
+
+### Using Custom Data
+
 ```python
 import pandas as pd
-from inference import predict, list_available_models
+from inference import predict
 
-print(list_available_models())
-# ['attention_wrist_all', 'deep_mlp_wrist_all', 'extratrees_wrist_all', ...]
+# Create custom feature data
+custom_features = pd.DataFrame([{
+    "RMSSD": 45.2,
+    "Mean_RR": 850.3,
+    "HRV_SDNN": 52.1,
+    "pNN50": 12.5,
+    "HRV_HF": 1200.0,
+    "HRV_LF": 800.0,
+    "HRV_HF_nu": 0.6,
+    "HRV_LF_nu": 0.4,
+    "HRV_LFHF": 0.67,
+    "HRV_TP": 2000.0,
+    "HRV_SD1SD2": 0.5,
+    "HRV_Sampen": 1.2,
+    "HRV_DFA_alpha1": 1.0,
+    "HR": 70.5
+}])
 
-sample_features = pd.DataFrame([
-    {
-        "SDNN": 87.4,
-        "RMSSD": 62.1,
-        "pNN50": 0.31,
-        "Mean_RR": 812.5,
-        "HR_mean": 73.9,
-    }
-])
+results = predict(
+    data=custom_features,
+    config_name="w120s60_binary",
+    model_name="extratrees"
+)
+```
 
-predictions = predict(sample_features, model_name="attention")
-print(predictions)
-# [{'numeric': 2, 'label': 'Amusement', 'probabilities': {'Baseline': 0.02, ...}}]
+### Using Different Model Types
+
+```python
+from inference import predict, generate_random_features
+
+data = generate_random_features(emotion="stress", n_samples=1)
+
+# Try different models
+for model_name in ["extratrees", "rf", "logreg"]:
+    results = predict(
+        data=data,
+        config_name="w60s5_binary",
+        model_name=model_name
+    )
+    print(f"{model_name}: {results[0]['label']}")
 ```
 
 ## Available Models
 
-Models live in `sdk models/` (see `MODEL_DIR` inside `inference.py`). Aliases such as
-`attention`, `deepmlp`, `randomforest`, and `xgb` are supported; use
-`list_available_models()` to see the canonical names. Example inventory:
+Models are organized by configuration directory. Each contains:
 
-| Alias | Checkpoint | Type |
-|-------|------------|------|
-| `attention` | `attention_wrist_all.pth` | PyTorch (AttentionClassifier) |
-| `deepmlp` | `deep_mlp_wrist_all.pth` | PyTorch (DeepMLPClassifier) |
-| `simple` | `simple_wrist_all.pth` | PyTorch (SimpleDeepNN) |
-| `randomforest` | `rf_wrist_all.pkl` | Scikit-learn |
-| `extratrees` | `extratrees_wrist_all.pkl` | Scikit-learn |
-| `logreg` | `logreg_wrist_all.pkl` | Scikit-learn |
-| `linearsvm` | `linearsvm_wrist_all.pkl` | Scikit-learn |
-| `xgb` | `xgb_wrist_all.pkl` | XGBoost (via joblib) |
+| Model Type | File Format | Description |
+|------------|-------------|-------------|
+| `extratrees` | `.onnx` or `.pkl` | ExtraTrees Classifier |
+| `rf` | `.onnx` or `.pkl` | Random Forest |
+| `logreg` | `.onnx` or `.pkl` | Logistic Regression |
+| `xgb` | `.pkl` | XGBoost Classifier |
+| `linearsvm` | `.pkl` | Linear SVM |
 
-Additional experimental checkpoints may be present (for example
-`transformer_wrist_all.pth`); availability depends on the local checkout.
+Note: Some models are available in ONNX format (with built-in normalization), others as scikit-learn pickle files.
 
 ## Files
 
@@ -85,11 +154,40 @@ Additional experimental checkpoints may be present (for example
 wesad-reference-models/
 ├── inference.py              # Reference inference code
 ├── models/
-│   ├── *.pth                # PyTorch attention/MLP checkpoints
-│   ├── *.pkl                # Scikit-learn models & scaler
-│   └── *.xgb                # XGBoost models (joblib serialized)
+│   ├── w60s5_binary/        # 60s window, 5s step models
+│   │   ├── ExtraTrees.pkl
+│   │   ├── ExtraTrees_metadata.json
+│   │   ├── RF.pkl
+│   │   ├── RF_metadata.json
+│   │   └── ...
+│   ├── w120s5_binary/       # 120s window, 5s step models
+│   │   ├── ExtraTrees.onnx
+│   │   ├── ExtraTrees_metadata.json
+│   │   └── ...
+│   └── w120s60_binary/      # 120s window, 60s step models
+│       ├── ExtraTrees.onnx
+│       ├── ExtraTrees_metadata.json
+│       └── ...
 └── README.md                # This file
 ```
+
+## Random Data Generation
+
+The `inference.py` module includes a `generate_random_features()` function for testing:
+
+```python
+from inference import generate_random_features
+
+# Generate baseline (calm) features
+baseline = generate_random_features(emotion="baseline", n_samples=5, seed=42)
+
+# Generate stress features
+stress = generate_random_features(emotion="stress", n_samples=5, seed=123)
+```
+
+This generates realistic HRV features based on typical physiological patterns:
+- **Baseline**: Lower HR (60-75 bpm), higher HRV metrics
+- **Stress**: Higher HR (75-100 bpm), lower HRV metrics
 
 ## Differences from Production SDK
 
@@ -97,8 +195,8 @@ wesad-reference-models/
 |--------|----------------|----------------|
 | **Location** | `tools/wesad-reference-models/` | `sdks/python/` |
 | **Purpose** | Research/training reference | Production deployment |
-| **Models** | 14 pre-trained models | 1 embedded model |
-| **Input** | DataFrame with many features | Raw HR + RR intervals |
+| **Models** | Multiple models per config | Single embedded model |
+| **Input** | Pre-computed HRV features | Raw HR + RR intervals |
 | **API** | Function-based | Class-based engine |
 | **Architecture** | Stateless | Stateful sliding window |
 | **Installation** | Not pip-installable | `pip install synheart-emotion` |
@@ -120,21 +218,61 @@ cd sdks/python
 pip install -e .
 ```
 
-## Dependencies
+## Setup and Installation
+
+### Using Virtual Environment (Recommended)
 
 ```bash
-pip install numpy pandas joblib torch scikit-learn xgboost
+cd tools/wesad-reference-models
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Dependencies
+
+Required packages (included in `requirements.txt`):
+```bash
+pip install numpy pandas joblib onnxruntime scikit-learn
+```
+
+Optional (for PyTorch models):
+```bash
+pip install torch
+```
+
+### Testing
+
+After setup, run the test script to verify everything works:
+
+```bash
+python test_inference.py
+```
+
+Or run the example code directly:
+
+```bash
+python inference.py
 ```
 
 ## Training Pipeline Reference
 
 This code represents the **output** of a training pipeline:
 1. ECG data collected from WESAD dataset
-2. Feature extraction with NeuroKit2
+2. Feature extraction with NeuroKit2 (14 HRV features)
 3. Model training with cross-validation
-4. Model serialization to joblib/xgb
+4. Model serialization to ONNX/joblib/pickle
 
-For production deployment, the simplified LinearSVM model in `sdks/python/` is used.
+For production deployment, the simplified ExtraTrees ONNX model in `sdks/python/` is used.
 
 ## Citation
 

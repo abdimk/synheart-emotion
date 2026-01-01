@@ -1,0 +1,10 @@
+# Requirements for WESAD Reference Models inference
+numpy>=1.21.0
+pandas>=1.3.0
+joblib>=1.0.0
+onnxruntime>=1.10.0
+scikit-learn>=1.0.0
+
+# Optional: PyTorch (for .pth models)
+# torch>=1.9.0
+

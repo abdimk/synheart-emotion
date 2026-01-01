@@ -14,8 +14,10 @@ Synheart Emotion is a comprehensive SDK ecosystem for inferring momentary affect
 - **🧠 On-Device Processing**: All computations happen locally for privacy
 - **📊 Unified API**: Consistent API across all platforms
 - **🔒 Privacy-First**: No raw biometric data leaves your device
-- **⚡ High Performance**: < 5ms inference latency on mid-range devices
-- **🎓 Research-Based**: Models trained on WESAD dataset with 78% accuracy
+- **⚡ High Performance**: < 10ms inference latency (ONNX models)
+- **🎓 Research-Based**: Models trained on WESAD dataset with 78.4% accuracy (72.6% F1 score)
+- **🧬 14 HRV Features**: Comprehensive feature extraction (time-domain, frequency-domain, non-linear)
+- **🤖 ExtraTrees Models**: ONNX-optimized classifiers for on-device inference
 - **🧪 Thread-Safe**: Concurrent data ingestion supported on all platforms
 - **🏗️ HSI-Compatible**: Output schema validated against Synheart Core HSI specification
 
@@ -26,7 +28,7 @@ All SDKs provide **identical functionality** with platform-idiomatic APIs. Each 
 ### Dart/Flutter SDK
 ```yaml
 dependencies:
-  synheart_emotion: ^0.2.1
+  synheart_emotion: ^0.2.3
 ```
 📖 **Repository**: [synheart-emotion-dart](https://github.com/synheart-ai/synheart-emotion-dart)
 
@@ -70,7 +72,7 @@ import 'package:synheart_emotion/synheart_emotion.dart';
 
 final engine = EmotionEngine.fromPretrained(EmotionConfig());
 engine.push(hr: 72.0, rrIntervalsMs: [...], timestamp: DateTime.now());
-final results = engine.consumeReady();
+final results = await engine.consumeReadyAsync();
 ```
 
 **Use when:** Your app only needs emotion detection, not full human state intelligence.
@@ -139,23 +141,70 @@ This repository serves as the **source of truth** for shared resources across al
 
 ```
 synheart-emotion/                  # Source of truth repository
+│
 ├── models/                        # ML model definitions and assets
-│   ├── wesad_emotion_v1_0.json    # Model configuration
-│   └── *.onnx                     # Pre-trained model weights
+│   ├── ExtraTrees_60_5_nozipmap.onnx          # 60s window, 5s step model
+│   ├── ExtraTrees_120_5_nozipmap.onnx         # 120s window, 5s step model
+│   ├── ExtraTrees_120_60_nozipmap.onnx         # 120s window, 60s step model
+│   ├── ExtraTrees_metadata_60_5_nozipmap.json # Model metadata (60s/5s)
+│   ├── ExtraTrees_metadata_120_5_nozipmap.json # Model metadata (120s/5s)
+│   └── ExtraTrees_metadata_120_60_nozipmap.json # Model metadata (120s/60s)
 │
 ├── docs/                          # Technical documentation
-│   └── MODEL_CARD.md              # Model details and performance
-│   ├── RFC-Emotion-0001-spec.md        # Formal specification 
-│   ├── RFC-Emotion-0002-guide.md   # Implementation guide 
+│   ├── MODEL_CARD.md              # Model details and performance
+│   ├── RFC-Emotion-0001-spec.md   # Formal specification
+│   └── RFC-Emotion-0002-guide.md  # Implementation guide
 │
 ├── tools/                         # Development tools
+│   ├── README.md                  # Tools overview
 │   ├── synthetic-data-generator/  # Generate test biosignal data
-│   ├── wesad-reference-models/    # Research artifacts (14 ML models)
-│   └── validate_hsi_schema.py     # HSI schema validation (CI)
+│   │   ├── cli.py                 # Command-line interface
+│   │   ├── setup.py               # Package setup
+│   │   ├── syndata/               # Generator package
+│   │   └── examples/              # Usage examples
+│   └── wesad-reference-models/   # Research artifacts (pre-trained ML models)
+│       ├── inference.py           # Reference inference code with ONNX support
+│       ├── requirements.txt       # Python dependencies
+│       ├── test_inference.py      # Test suite
+│       └── models/                # Pre-trained models by configuration
+│           ├── w60s5_binary/      # 60s window, 5s step models
+│           │   ├── ExtraTrees.pkl, ExtraTrees_metadata.json
+│           │   ├── RF.pkl, RF_metadata.json
+│           │   ├── LogReg.pkl, LogReg_metadata.json
+│           │   ├── XGB.pkl, LinearSVM.pkl
+│           ├── w120s5_binary/     # 120s window, 5s step models
+│           │   ├── ExtraTrees.pkl, ExtraTrees_metadata.json
+│           │   ├── RF.pkl, RF_metadata.json
+│           │   ├── LogReg.pkl, LogReg_metadata.json
+│           │   └── XGB.pkl, LinearSVM.pkl
+│           └── w120s60_binary/    # 120s window, 60s step models
+│               ├── ExtraTrees.onnx, ExtraTrees.pkl, ExtraTrees_metadata.json
+│               ├── RF.onnx, RF.pkl, RF_metadata.json
+│               ├── LogReg.onnx, LogReg.pkl, LogReg_metadata.json
+│               └── XGB.pkl, LinearSVM.pkl
 │
 ├── examples/                      # Cross-platform example applications
+│   ├── android/                   # Android (Kotlin) example
+│   ├── flutter/                   # Flutter/Dart example
+│   │   ├── lib/                   # Dart source code
+│   │   ├── assets/ml/             # Model files for Flutter
+│   │   └── android/, ios/, etc.   # Platform-specific configs
+│   ├── ios/                       # iOS (Swift) example
+│   └── python-example/            # Python example
+│       ├── basic_usage.py         # Basic usage demo
+│       ├── cli_demo.py            # CLI demonstration
+│       ├── streaming_data.py     # Streaming data example
+│       └── custom_config.py      # Custom configuration example
+│
 ├── scripts/                       # Build and deployment scripts
+│   ├── copy-models.py             # Python script to copy models
+│   └── copy-models.sh             # Shell script to copy models
+│
 ├── .github/workflows/             # CI/CD including HSI schema checks
+│
+├── LICENSE                        # MIT License
+├── README.md                      # This file
+├── CHANGELOG.md                   # Version history for all SDKs
 └── CONTRIBUTING.md                # Contribution guidelines for all SDKs
 ```
 
@@ -289,11 +338,26 @@ Exports to: CSV, JSON, Python, Kotlin, Swift
 
 ### WESAD Reference Models
 
-Research artifacts with 14 pre-trained ML models from WESAD dataset:
+Research artifacts with pre-trained ML models from WESAD dataset organized by window configuration:
 
-- XGBoost, RandomForest, ExtraTrees, KNN, LDA, SVM, etc.
+- **Model Configurations**: w60s5_binary, w120s5_binary, w120s60_binary
+- **Model Types**: ExtraTrees, RandomForest, LogisticRegression, XGBoost, LinearSVM
+- **Formats**: ONNX (with built-in normalization) and scikit-learn pickle files
+- **Features**: 14 HRV features (RMSSD, Mean_RR, HRV_SDNN, pNN50, etc.)
+- **Random Data Generation**: Built-in function for testing with realistic HRV features
 - For research and model comparison only
 - **Not for production use** (use SDKs instead)
+
+**Quick Start:**
+```python
+from tools.wesad_reference_models.inference import predict, generate_random_features
+
+# Generate random test data
+data = generate_random_features(emotion="baseline", n_samples=1, seed=42)
+
+# Run inference
+results = predict(data, config_name="w60s5_binary", model_name="extratrees")
+```
 
 📖 [Research Models Documentation](tools/wesad-reference-models/README.md)
 
@@ -387,15 +451,15 @@ All SDKs expose identical functionality:
 
 >The model outputs probabilistic class scores with confidence estimates over a rolling time window; predictions should be interpreted as state tendencies, not ground-truth emotional labels.
 
-**Model Type**: Linear SVM (One-vs-Rest)
-**Task**: Momentary emotion recognition from HR/RR
-**Input Features**: `[hr_mean, sdnn, rmssd]` over a 60s rolling window
+**Model Type**: ExtraTrees Classifier (ONNX-optimized)
+**Task**: Binary emotion recognition (Baseline vs Stress) from HR/RR-derived HRV features
+**Input Features**: 14 HRV features (`RMSSD`, `Mean_RR`, `HRV_SDNN`, `pNN50`, `HRV_HF`, `HRV_LF`, `HRV_HF_nu`, `HRV_LF_nu`, `HRV_LFHF`, `HRV_TP`, `HRV_SD1SD2`, `HRV_Sampen`, `HRV_DFA_alpha1`, `HR`) over configurable rolling windows (60s or 120s)
 **Performance**:
-- Accuracy: ~78%
-- Macro-F1: ~72%
-- Latency: < 5ms on modern mid-range devices
+- Accuracy: ~78.4% (LOSO CV)
+- Macro-F1: ~72.6% (LOSO CV)
+- Latency: < 10ms on modern mid-range devices (ONNX models)
 
-The model is trained on WESAD-derived 3-class subset with artifact rejection and normalization.
+The models are trained on WESAD-derived binary classification (Baseline vs Stress) with artifact rejection and normalization. Multiple window configurations available (60s/5s, 120s/5s, 120s/60s).
 
 📖 [Model Card](docs/MODEL_CARD.md) | [RFC E1.1](docs/RFC-E1.1.md)
 
@@ -419,7 +483,7 @@ The model is trained on WESAD-derived 3-class subset with artifact rejection and
 
 ### Tools Documentation
 - [Synthetic Data Generator](tools/synthetic-data-generator/README.md) - Test data generation
-- [WESAD Reference Models](tools/wesad-reference-models/README.md) - Research artifacts
+- [WESAD Reference Models](tools/wesad-reference-models/README.md) - Research artifacts with ONNX support and random data generation
 
 ### Technical Documentation
 - [RFC 0001](docs/RFC-Emotion-0001-spec.md) - Formal specification 
