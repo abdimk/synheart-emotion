@@ -59,6 +59,15 @@ final engine = EmotionEngine.fromPretrained(
 - Package now exclusively uses ONNX models for emotion inference.
 - Improved package structure alignment with Flutter package conventions.
 
+### Platform Releases
+
+| Platform | Version | Changelog |
+|---|---|---|
+| Dart | 0.2.3 | [CHANGELOG](https://github.com/synheart-ai/synheart-emotion-dart/blob/main/CHANGELOG.md) |
+| Kotlin | 0.1.0 | [CHANGELOG](https://github.com/synheart-ai/synheart-emotion-kotlin/blob/main/CHANGELOG.md) |
+| Swift | 0.1.0 | [CHANGELOG](https://github.com/synheart-ai/synheart-emotion-swift/blob/main/CHANGELOG.md) |
+| Python | 0.1.0 | [CHANGELOG](https://github.com/synheart-ai/synheart-emotion-python/blob/main/CHANGELOG.md) |
+
 ## [0.1.0] - 2025-10-30
 
 This release includes synchronized versions across all platforms. All SDKs are at version 0.1.0.

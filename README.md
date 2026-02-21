@@ -551,6 +551,19 @@ See [Swift SDK Examples](https://github.com/synheart-ai/synheart-emotion-swift#h
 - **Memory**: < 3 MB (engine + buffers)
 - **Accuracy**: 78% on WESAD dataset (3-class emotion recognition)
 
+## Repository Role
+
+> **This is a source-of-truth repository** — it contains specifications, documentation, RFCs, schemas, and shared resources that define the contracts for all platform SDK implementations.
+>
+> Active development happens in the platform-specific SDK repositories listed below. If you find a bug, need a feature, or want to open an issue, **please open it in the relevant platform repo** unless it concerns the specification, architecture, or shared resources defined here.
+
+| Platform SDK | Repository |
+|--------------|------------|
+| Dart | [synheart-emotion-dart](https://github.com/synheart-ai/synheart-emotion-dart) |
+| Python | [synheart-emotion-python](https://github.com/synheart-ai/synheart-emotion-python) |
+| Kotlin | [synheart-emotion-kotlin](https://github.com/synheart-ai/synheart-emotion-kotlin) |
+| Swift | [synheart-emotion-swift](https://github.com/synheart-ai/synheart-emotion-swift) |
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
