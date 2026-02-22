@@ -2,7 +2,7 @@
 import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 
 @dataclass

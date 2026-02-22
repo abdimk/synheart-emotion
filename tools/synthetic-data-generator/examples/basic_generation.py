@@ -1,5 +1,4 @@
 """Basic example of generating synthetic biosignal data."""
-from datetime import datetime
 from syndata import generate_scenario, generate_session
 from syndata.exporters import export_to_json
 

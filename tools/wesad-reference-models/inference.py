@@ -5,7 +5,7 @@ import random
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import joblib
 import numpy as np
@@ -545,7 +545,7 @@ if __name__ == "__main__":
                 print(f"\nSample {i+1}:")
                 print(f"  Predicted: {result['label']}")
                 if "probabilities" in result:
-                    print(f"  Probabilities:")
+                    print("  Probabilities:")
                     for label, prob in result["probabilities"].items():
                         print(f"    {label}: {prob:.3f}")
 
@@ -574,7 +574,7 @@ if __name__ == "__main__":
                 print(f"\nSample {i+1}:")
                 print(f"  Predicted: {result['label']}")
                 if "probabilities" in result:
-                    print(f"  Probabilities:")
+                    print("  Probabilities:")
                     for label, prob in result["probabilities"].items():
                         print(f"    {label}: {prob:.3f}")
 

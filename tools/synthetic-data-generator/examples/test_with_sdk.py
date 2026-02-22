@@ -56,7 +56,7 @@ def main():
                 print(f"\n   Result #{results_count}:")
                 print(f"     Detected: {result.emotion} ({result.confidence * 100:.1f}%)")
                 print(f"     Expected: {point['emotion']}")
-                print(f"     Probabilities:")
+                print("     Probabilities:")
                 for emotion, prob in sorted(
                     result.probabilities.items(), key=lambda x: x[1], reverse=True
                 ):
@@ -67,13 +67,13 @@ def main():
     print("Summary:")
     print(f"  Total data points processed: {len(test_data)}")
     print(f"  Inference results emitted: {results_count}")
-    print(f"\n  Emotion detections:")
+    print("\n  Emotion detections:")
     for emotion, count in sorted(emotion_detections.items()):
         print(f"    {emotion}: {count} times")
 
     # Buffer stats
     stats = engine.get_buffer_stats()
-    print(f"\n  Final buffer stats:")
+    print("\n  Final buffer stats:")
     print(f"    Data points: {stats['count']}")
     print(f"    Duration: {stats['duration_ms']}ms")
     print(f"    Total RR intervals: {stats['rr_count']}")
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     try:
         main()
     except ImportError as e:
-        print(f"Error: Could not import SDK. Make sure it's installed.")
+        print("Error: Could not import SDK. Make sure it's installed.")
         print(f"  {e}")
         print("\nInstall the SDK with:")
         print("  cd sdks/python && pip install -e .")

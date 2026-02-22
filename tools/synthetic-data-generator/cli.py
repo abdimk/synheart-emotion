@@ -6,10 +6,6 @@ from datetime import datetime
 from pathlib import Path
 
 from syndata import (
-    BiosignalGenerator,
-    CALM_SCENARIO,
-    STRESSED_SCENARIO,
-    AMUSED_SCENARIO,
     generate_scenario,
     generate_session,
 )
@@ -137,7 +133,7 @@ Examples:
         if args.verbose:
             hr_values = [p["hr"] for p in data]
             rr_counts = [len(p["rr_intervals_ms"]) for p in data]
-            print(f"\nStatistics:")
+            print("\nStatistics:")
             print(f"  HR range: {min(hr_values):.1f} - {max(hr_values):.1f} BPM")
             print(f"  RR intervals per point: {min(rr_counts)} - {max(rr_counts)}")
             print(f"  Total RR intervals: {sum(rr_counts)}")

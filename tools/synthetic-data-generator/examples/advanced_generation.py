@@ -1,5 +1,4 @@
 """Advanced example with custom scenarios and transitions."""
-from datetime import datetime
 from syndata import BiosignalGenerator, EmotionScenario
 from syndata.exporters import export_all_formats
 
