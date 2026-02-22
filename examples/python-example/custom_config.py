@@ -14,7 +14,7 @@ import random
 from datetime import datetime
 from typing import Dict, Any, Optional
 
-from synheart_emotion import EmotionConfig, EmotionEngine, EmotionError
+from synheart_emotion import EmotionConfig, EmotionEngine
 from synheart_emotion.error import TooFewRRError, BadInputError
 
 

@@ -127,7 +127,7 @@ def run_simulation(engine: EmotionEngine, scenario: EmotionScenario, samples: in
             print(f"   {Colors.BOLD}{Colors.GREEN}📊 Result #{results_count}:{Colors.END}")
             print(f"      {detected_emoji} Emotion: {Colors.BOLD}{result.emotion}{Colors.END}")
             print(f"      🎯 Confidence: {Colors.BOLD}{result.confidence:.1%}{Colors.END}")
-            print(f"      📈 Probabilities:")
+            print("      📈 Probabilities:")
 
             # Sort probabilities by value
             sorted_probs = sorted(

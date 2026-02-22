@@ -37,7 +37,7 @@ def copy_models():
         python_data.mkdir(parents=True, exist_ok=True)
         for model_file in model_files:
             shutil.copy2(model_file, python_data / model_file.name)
-        print(f"  ✅ Python: copied to src/synheart_emotion/data/")
+        print("  ✅ Python: copied to src/synheart_emotion/data/")
     
     # Android SDK - currently uses embedded models, but we can copy if needed
     # android_assets = root_dir / "sdks" / "android" / "src" / "main" / "res" / "raw"

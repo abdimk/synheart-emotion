@@ -61,7 +61,7 @@ def main():
             print()
             print(f"   → Emotion detected: {result.emotion}")
             print(f"   → Confidence: {result.confidence:.1%}")
-            print(f"   → Probabilities:")
+            print("    → Probabilities:")
             for label, prob in sorted(result.probabilities.items(), key=lambda x: x[1], reverse=True):
                 print(f"      • {label:8s}: {prob:.1%}")
             print()

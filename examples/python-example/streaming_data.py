@@ -10,7 +10,6 @@ This example demonstrates continuous data streaming with:
 """
 
 import signal
-import sys
 import time
 import random
 from datetime import datetime
@@ -151,7 +150,7 @@ class StreamingDemo:
             print(f"   {emoji} Emotion: {result.emotion}")
             print(f"   🎯 Confidence: {result.confidence:.1%}")
             print(f"   💓 HR: {hr:.1f} bpm")
-            print(f"   📈 Probabilities: ", end='')
+            print("    📈 Probabilities: ", end='')
 
             probs_str = ", ".join([
                 f"{label}: {prob:.0%}"
