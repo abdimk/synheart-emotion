@@ -29,7 +29,7 @@ def copy_models():
         flutter_assets.mkdir(parents=True, exist_ok=True)
         for model_file in model_files:
             shutil.copy2(model_file, flutter_assets / model_file.name)
-        print(f"  ✅ Flutter: copied to assets/ml/")
+        print("  ✅ Flutter: copied to assets/ml/")
     
     # Python SDK - copy to data directory
     python_data = root_dir / "sdks" / "python" / "src" / "synheart_emotion" / "data"
